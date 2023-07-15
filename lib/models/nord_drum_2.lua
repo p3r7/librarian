@@ -1,4 +1,7 @@
 -- librarian/model/nord drum 2
+--
+-- NB: requires the deive to have been updated to v3.0
+--
 -- manual: https://www.nordkeyboards.com/sites/default/files/files/downloads/manuals/nord-drum-2/Nord%20Drum%202%20English%20User%20Manual%20v3.0x%20Edition%20F.pdf
 
 -- ------------------------------------------------------------------------
@@ -25,7 +28,7 @@ include('librarian/lib/core')
 
 NordDrum2.PARAMS = {
   'voice_channels',
-  'global_channel', 'global_channel_notes'
+  'global_channel_notes',
 }
 
 local VOICE_CH_LIST = {1, 2, 3, 4, 5, 6}
@@ -37,7 +40,7 @@ local GLOBAL_CH_NOTES = {60, 62, 64, 65, 67, 69}
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function NordDrum2.new(id)
+function NordDrum2.new(id, midi_device, ch)
   local p = setmetatable({}, NordDrum2)
 
   p.kind = KIND
@@ -47,11 +50,16 @@ function NordDrum2.new(id)
   p.fqid = p.shorthand.."_"..id
   p.display_name = p.kind.." #"..id
 
-  p.midi_device = midiutil.MIDI_DEV_ALL
+  p.midi_device = midi_device
+
+  if ch == nil then
+    ch = GLOBAL_CH
+  end
+
+  p.ch = ch
+  p.global_channel_notes = GLOBAL_CH_NOTES
 
   p.voice_channels = VOICE_CH_LIST
-  p.global_channel = GLOBAL_CH
-  p.global_channel_notes = GLOBAL_CH_NOTES
 
   return p
 end
@@ -492,13 +500,12 @@ function NordDrum2:midi_set_param(v, p, val)
 end
 
 function NordDrum2:pgm_change(bank, program)
-  local ch = self.global_channel
   local nrpn = GLOBAL_PARAM_PROPS['bank']
   local msb_cc = nrpn[1]
   local lsb_cc = nrpn[2]
-  midiutil.send_cc(self.midi_device, ch, msb_cc, 0)
-  midiutil.send_cc(self.midi_device, ch, lsb_cc, bank-1) -- 0-8
-  midiutil.send_pgm_change(self.midi_device, ch, program-1)
+  midiutil.send_cc(self.midi_device, self.ch, msb_cc, 0)
+  midiutil.send_cc(self.midi_device, self.ch, lsb_cc, bank-1) -- 0-8
+  midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end
 
 -- ------------------------------------------------------------------------

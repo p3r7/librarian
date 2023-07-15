@@ -20,6 +20,7 @@ local function load_conf_file()
 end
 
 local function init_devices_from_conf(conf)
+  local midiutil = include('librarian/lib/midiutil')
 
   local model_libs = {}
   local model_counts = {}
@@ -42,7 +43,12 @@ local function init_devices_from_conf(conf)
       model_counts[hw_conf.model] = 1
     end
 
-    local hw = HW.new(id_for_model)
+    local midi_device = hw_conf.device
+    if midi_device == nil then
+      midi_device = midiutil.MIDI_DEV_ALL
+    end
+
+    local hw = HW.new(id_for_model, midi_device, hw_conf.ch)
 
     for k, v in pairs(hw_conf.params) do
       if k == 'midi_device' or tab.contains(HW.PARAMS, k) then
