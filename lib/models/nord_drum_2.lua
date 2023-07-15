@@ -6,24 +6,27 @@
 local NordDrum2 = {}
 NordDrum2.__index = NordDrum2
 
+local KIND = "NordDrum2"
+local SHORTHAND = "nd2"
+
 
 -- ------------------------------------------------------------------------
 -- deps
 
 local controlspec = require "controlspec"
 local formatters = require "formatters"
+local midiutil = include('librarian/lib/midiutil')
+
+include('librarian/lib/core')
 
 
 -- ------------------------------------------------------------------------
--- core
+-- API - supported object params
 
-function mod1(v, m)
-  return ((v - 1) % m) + 1
-end
-
-
--- ------------------------------------------------------------------------
--- conf default values
+NordDrum2.PARAMS = {
+  'voice_channels',
+  'global_channel', 'global_channel_notes'
+}
 
 local VOICE_CH_LIST = {1, 2, 3, 4, 5, 6}
 
@@ -32,125 +35,40 @@ local GLOBAL_CH_NOTES = {60, 62, 64, 65, 67, 69}
 
 
 -- ------------------------------------------------------------------------
--- consts
+-- API - constructors
 
-local WAVE_ORDER = {
-  'A1', 'A2', 'A3', 'A4',
-  'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
-  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7',
-  'P1', 'P2', 'P3', 'P4',
-  'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9',
-  'C1', 'C2', 'C3',
-}
+function NordDrum2.new(id)
+  local p = setmetatable({}, NordDrum2)
 
--- NB: this is a mess...
-local WAVE_CC_ORDER = {
-  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7',
-  'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8',
-  'P1', 'P2', 'P3', 'P4',
+  p.kind = KIND
+  p.shorthand = SHORTHAND
 
-  -- 70-74 -> dead zone, sounds like P3
-  'P3',
+  p.id = id
+  p.fqid = p.shorthand.."_"..id
+  p.display_name = p.kind.." #"..id
 
-  'C1', 'C2',
+  p.midi_device = midiutil.MIDI_DEV_ALL
 
-  'A1', 'A3', 'A4', 'A2',
+  p.voice_channels = VOICE_CH_LIST
+  p.global_channel = GLOBAL_CH
+  p.global_channel_notes = GLOBAL_CH_NOTES
 
-  'd9',
-
-  'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
-
-  'C3',
-}
-
-local NB_BANKS = 8
-local NB_PGM_PER_BANK = 50
-
-local function make_pgm_list()
-  local pgm_list = {}
-  for b=1,NB_BANKS do
-    for pgm=1,NB_PGM_PER_BANK do
-      table.insert(pgm_list, 'P'..b..'.'..pgm)
-    end
-  end
-  return pgm_list
+  return p
 end
 
 
 -- ------------------------------------------------------------------------
--- formatters
+-- API- norns-assignable params
 
-local function format_nd2_basic(param)
-  local value = param:get()
-  return util.round(util.linlin(0, 127, 0, 50, value))
-end
-
-local function format_nd2_99(param)
-  local value = param:get()
-  return util.round(util.linlin(0, 127, 0, 99, value))
-end
-
-local function format_nd2_balance(param)
-  local v = param:get()
-  local v2 = v - 64
-
-  local noise = 20
-  local tone = 20
-
-  if v2 < 0 then
-    tone = tone - util.round(util.linlin(0, 64, 0, 20, math.abs(v2)))
-  else
-    noise = noise - util.round(util.linlin(0, 64, 0, 20, v2))
-  end
-
-  return noise .. "-" .. tone
-end
-
-local function format_raw(param)
-  return param:get()
-end
-
-local function cc_to_wave(v)
-  if v == 0 then
-    v = 1
-  end
-
-  -- NB: still a glitch around d6/d7...
-
-  local wave_i = util.round(util.linlin(1, 127, 1, #WAVE_CC_ORDER, v))
-
-  return WAVE_CC_ORDER[wave_i]
-end
-
-local function wave_to_cc(w)
-  local wi = tab.key(WAVE_CC_ORDER, w)
-  return util.round(util.linlin(1, #WAVE_CC_ORDER, 1, 127, wi))
-end
-
-local function format_nd2_wave(param)
-  local v = param:get()
-
-  if v == 0 then
-    v = 1
-  end
-  -- NB: still a glitch around d6/d7...
-  local wave_i = util.round(util.linlin(1, 127, 1, #WAVE_CC_ORDER, v))
-
-  -- local wave_i = util.round(util.linlin(0, 119, 1, #WAVE_CC_ORDER, v))
-
-  return WAVE_CC_ORDER[wave_i]
+function NordDrum2:get_nb_params()
+  return (NordDrum2.NB_VOICES * (#NordDrum2.VOICE_PARAMS + 1)) + 1
 end
 
 
 -- ------------------------------------------------------------------------
 -- static conf
 
-local MIDI_DEV_ALL = "ALL"
-
-local KIND = "NordDrum2"
-local SHORTHAND = "nd2"
-
-local NB_VOICES = 6
+NordDrum2.NB_VOICES = 6
 
 local GLOBAL_PARAMS = {
   'bank',
@@ -168,7 +86,7 @@ local GLOBAL_PARAM_PROPS = {
   },
 }
 
-local VOICE_PARAMS = {
+NordDrum2.VOICE_PARAMS = {
   -- global
   'level',
   'pan',
@@ -377,6 +295,119 @@ local VOICE_PARAM_PROPS = {
   },
 }
 
+
+-- ------------------------------------------------------------------------
+-- consts
+
+local WAVE_ORDER = {
+  'A1', 'A2', 'A3', 'A4',
+  'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
+  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7',
+  'P1', 'P2', 'P3', 'P4',
+  'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9',
+  'C1', 'C2', 'C3',
+}
+
+-- NB: this is a mess...
+local WAVE_CC_ORDER = {
+  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7',
+  'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8',
+  'P1', 'P2', 'P3', 'P4',
+
+  -- 70-74 -> dead zone, sounds like P3
+  'P3',
+
+  'C1', 'C2',
+
+  'A1', 'A3', 'A4', 'A2',
+
+  'd9',
+
+  'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
+
+  'C3',
+}
+
+local NB_BANKS = 8
+local NB_PGM_PER_BANK = 50
+
+local function make_pgm_list()
+  local pgm_list = {}
+  for b=1,NB_BANKS do
+    for pgm=1,NB_PGM_PER_BANK do
+      table.insert(pgm_list, 'P'..b..'.'..pgm)
+    end
+  end
+  return pgm_list
+end
+
+
+-- ------------------------------------------------------------------------
+-- formatters
+
+local function format_nd2_basic(param)
+  local value = param:get()
+  return util.round(util.linlin(0, 127, 0, 50, value))
+end
+
+local function format_nd2_99(param)
+  local value = param:get()
+  return util.round(util.linlin(0, 127, 0, 99, value))
+end
+
+local function format_nd2_balance(param)
+  local v = param:get()
+  local v2 = v - 64
+
+  local noise = 20
+  local tone = 20
+
+  if v2 < 0 then
+    tone = tone - util.round(util.linlin(0, 64, 0, 20, math.abs(v2)))
+  else
+    noise = noise - util.round(util.linlin(0, 64, 0, 20, v2))
+  end
+
+  return noise .. "-" .. tone
+end
+
+local function format_raw(param)
+  return param:get()
+end
+
+local function cc_to_wave(v)
+  if v == 0 then
+    v = 1
+  end
+
+  -- NB: still a glitch around d6/d7...
+
+  local wave_i = util.round(util.linlin(1, 127, 1, #WAVE_CC_ORDER, v))
+
+  return WAVE_CC_ORDER[wave_i]
+end
+
+local function wave_to_cc(w)
+  local wi = tab.key(WAVE_CC_ORDER, w)
+  return util.round(util.linlin(1, #WAVE_CC_ORDER, 1, 127, wi))
+end
+
+local function format_nd2_wave(param)
+  local v = param:get()
+
+  if v == 0 then
+    v = 1
+  end
+  -- NB: still a glitch around d6/d7...
+  local wave_i = util.round(util.linlin(1, 127, 1, #WAVE_CC_ORDER, v))
+
+  -- local wave_i = util.round(util.linlin(0, 119, 1, #WAVE_CC_ORDER, v))
+
+  return WAVE_CC_ORDER[wave_i]
+end
+
+
+
 local function param_display_name(p)
   if VOICE_PARAM_PROPS[p] == nil then
     print("------------------------")
@@ -413,27 +444,6 @@ local function param_formatter(p)
 end
 
 
--- ------------------------------------------------------------------------
--- constructors
-
-function NordDrum2.new(id)
-  local p = setmetatable({}, NordDrum2)
-
-  p.kind = KIND
-  p.shorthand = SHORTHAND
-
-  p.id = id
-  p.fqid = p.shorthand.."_"..id
-  p.display_name = p.kind.." "..id
-
-  p.midi_device = MIDI_DEV_ALL
-
-  p.voice_channels = VOICE_CH_LIST
-  p.global_channel = GLOBAL_CH
-  p.global_channel_notes = GLOBAL_CH_NOTES
-
-  return p
-end
 
 
 function NordDrum2:register_params()
@@ -445,11 +455,11 @@ function NordDrum2:register_params()
                       self:pgm_change(bank, pgm)
   end)
 
-  for v=1,NB_VOICES do
+  for v=1,NordDrum2.NB_VOICES do
     local prefix = self.fqid..'_v'..v
     params:add_separator(prefix, "Voice "..v)
 
-    for _, p in ipairs(VOICE_PARAMS) do
+    for _, p in ipairs(NordDrum2.VOICE_PARAMS) do
       local p_param = prefix..'_'..p
       params:add{type = "number", id = p_param, name = param_display_name(p),
                  min = 1, max = 127,
@@ -463,50 +473,9 @@ function NordDrum2:register_params()
   end
 end
 
-function NordDrum2:get_nb_params()
-  return (NB_VOICES * (#VOICE_PARAMS + 1)) + 1
-end
 
 -- ------------------------------------------------------------------------
 -- implem
-
-function send_midi_msg(devname, msg)
-  local data = midi.to_data(msg)
-  local had_effect = false
-
-  for _, dev in pairs(midi.devices) do
-    if dev.port ~= nil and dev.name ~= 'virtual' then
-      if devname == MIDI_DEV_ALL or devname == dev.name then
-        midi.vports[dev.port]:send(data)
-        had_effect = true
-        if devname ~= MIDI_DEV_ALL then
-          break
-        end
-      end
-    end
-  end
-
-  return had_effect
-end
-
-local function send_midi_cc(midi_device, ch, cc, val)
-  local msg = {
-    type = 'cc',
-    cc = cc,
-    val = val,
-    ch = ch,
-  }
-  send_midi_msg(midi_device, msg)
-end
-
-local function send_midi_pgm_change(midi_device, ch, pgm)
-  local msg = {
-      type = "program_change",
-      val = pgm,
-      ch = ch,
-    }
-  send_midi_msg(midi_device, msg)
-end
 
 function NordDrum2:midi_set_param(v, p, val)
   local ch = self.voice_channels[v]
@@ -517,8 +486,8 @@ function NordDrum2:midi_set_param(v, p, val)
   elseif midi_path.type == 'nrpn' then
     local msb = midi_path.nrpn[1]
     local lsb = midi_path.nrpn[2]
-    send_midi_cc(self.midi_device, ch, msb, val)
-    send_midi_cc(self.midi_device, ch, lsb, val)
+    midiutil.send_cc(self.midi_device, ch, msb, val)
+    midiutil.send_cc(self.midi_device, ch, lsb, val)
   end
 end
 
@@ -527,9 +496,9 @@ function NordDrum2:pgm_change(bank, program)
   local nrpn = GLOBAL_PARAM_PROPS['bank']
   local msb_cc = nrpn[1]
   local lsb_cc = nrpn[2]
-  send_midi_cc(self.midi_device, ch, msb_cc, 0)
-  send_midi_cc(self.midi_device, ch, lsb_cc, bank-1) -- 0-8
-  send_midi_pgm_change(self.midi_device, ch, program-1)
+  midiutil.send_cc(self.midi_device, ch, msb_cc, 0)
+  midiutil.send_cc(self.midi_device, ch, lsb_cc, bank-1) -- 0-8
+  midiutil.send_pgm_change(self.midi_device, ch, program-1)
 end
 
 -- ------------------------------------------------------------------------
