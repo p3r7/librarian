@@ -33,7 +33,7 @@ return {
 
 #### Nord Drum 2 (`nord_drum_2`)
 
-![](./rsc/img/nord_drum_2_5x.png)
+![](./rsc/img/device/nord_drum_2_5x.png)
 
 [implem](./lib/models/nord_drum_2.lua), [manual (PDF)](https://www.nordkeyboards.com/sites/default/files/files/downloads/manuals/nord-drum-2/Nord%20Drum%202%20English%20User%20Manual%20v3.0x%20Edition%20F.pdf)
 
