@@ -1,13 +1,8 @@
 -- librarian mod.
 -- @eigen
 
-local MOD_NAME = 'librarian'
-
-
--- -------------------------------------------------------------------------
--- deps
-
 local mod = require 'core/mods'
+local MOD_NAME = mod.this_name
 
 
 -- -------------------------------------------------------------------------
@@ -62,6 +57,63 @@ local function init_devices_from_conf(conf)
     ::NEXT_HW_LOAD::
   end
 end
+
+
+-- -------------------------------------------------------------------------
+-- menu
+
+local m = {
+}
+
+m.init = function()
+  -- (nothing to do)
+end
+
+m.deinit = function()
+  -- (nothing to do)
+end
+
+m.key = function(n, z)
+  if n == 2 and z == 1 then
+    _menu.set_page("MODS")
+    return
+  end
+end
+
+m.enc = function(n, d)
+end
+
+local SCREEN_W = 128
+local SCREEN_H = 64
+
+m.redraw = function()
+  screen.clear()
+
+  -- NB: borders of the screen, to see boundaries
+  -- screen.aa(0)
+  -- screen.line_width(1)
+  -- screen.rect(1, 1, 128-1, 64-1)
+  -- screen.stroke()
+
+  screen.display_png(_path.code .. MOD_NAME .. '/rsc/img/librarian.png', 0, 5)
+
+  screen.move(SCREEN_W*3/4, SCREEN_H/4)
+  if norns.state.name == 'none' then
+    screen.text("Inactive")
+  else
+    screen.text("Active")
+  end
+
+  screen.update()
+end
+
+m.keychar = function(char)
+end
+
+m.keycode = function(code, value)
+end
+
+mod.menu.register(mod.this_name, m)
 
 
 -- -------------------------------------------------------------------------
