@@ -1,6 +1,6 @@
 # librarian
 
-![](./rsc/img/librarian.png)
+<img src="./rsc/img/librarian.png" width="285" height="295">
 
 mod that allows binding external hw to norns params.
 
