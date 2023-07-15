@@ -482,7 +482,7 @@ function NordDrum2:midi_set_param(v, p, val)
   local midi_path = param_midi_path(p)
 
   if midi_path.type == 'cc' then
-    send_midi_cc(self.midi_device, ch, midi_path.cc, val)
+    midiutil.send_cc(self.midi_device, ch, midi_path.cc, val)
   elseif midi_path.type == 'nrpn' then
     local msb = midi_path.nrpn[1]
     local lsb = midi_path.nrpn[2]
