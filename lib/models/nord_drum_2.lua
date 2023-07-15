@@ -501,10 +501,10 @@ end
 
 function NordDrum2:pgm_change(bank, program)
   local nrpn = GLOBAL_PARAM_PROPS['bank'].nrpn
-  local lsb_cc = nrpn[1]
-  local msb_cc = nrpn[2]
-  midiutil.send_cc(self.midi_device, self.ch, lsb_cc, 0)
-  midiutil.send_cc(self.midi_device, self.ch, msb_cc, bank-1) -- 0-8
+  local msb_cc = nrpn[1]
+  local lsb_cc = nrpn[2]
+  midiutil.send_cc(self.midi_device, self.ch, msb_cc, 0)
+  midiutil.send_cc(self.midi_device, self.ch, lsb_cc, bank-1) -- 0-8
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end
 
