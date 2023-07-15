@@ -7,6 +7,20 @@ mod that allows binding external hw to norns params.
 for now configuration has to be done manually by editing a conf file.
 
 
+## configuration
+
+hw devices need to be listed under the `.device` field.
+
+each hw device takes the following fields:
+
+| field    | type                    | mandatory          | description                                         | default value                 |
+|----------|-------------------------|--------------------|-----------------------------------------------------|-------------------------------|
+| `model`  | `string`                | :heavy_check_mark: | model of the device                                 |                               |
+| `device` | `string`                | :x:                | name of the midi device us to communicate w/ the hw | `ALL` (sends & listen to all) |
+| `ch`     | `int`                   | :heavy_check_mark: | main midi channel                                   |                               |
+| `params` | `map[string]<anything>` | :x:                | additional configuration supported by the hw        | `{}`                          |
+
+
 ## example configuration
 
 create file `/home/we/dust/data/librarian/default.inventory`
@@ -17,7 +31,7 @@ return {
     {
       model = "nord_drum_2",
       device = 'ALL',
-      ch = 10, -- NB: factory default
+      ch = 10,
       params = {
         voice_channels = {1, 2, 3, 4, 5, 6},
         global_channel_notes = {60, 62, 64, 65, 67, 69},
