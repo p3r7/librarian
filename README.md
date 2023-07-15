@@ -1,6 +1,6 @@
 # librarian
 
-<img src="./rsc/img/librarian.png" width="285" height="295">
+<img src="./rsc/img/librarian.png" width="285" height="295" style="image-rendering: pixelated;">
 
 mod that allows binding external hw to norns params.
 
