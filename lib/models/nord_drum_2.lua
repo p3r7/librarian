@@ -458,7 +458,7 @@ function NordDrum2:register_params()
   params:add_option(self.fqid .. '_pgm', "Program", make_pgm_list())
   params:set_action(self.fqid .. '_pgm',
                     function(pgm_id)
-                      local bank = math.floor(151/50) + 1
+                      local bank = math.floor(pgm_id/50) + 1
                       local pgm = mod1(pgm_id, 50)
                       self:pgm_change(bank, pgm)
   end)
@@ -500,11 +500,11 @@ function NordDrum2:midi_set_param(v, p, val)
 end
 
 function NordDrum2:pgm_change(bank, program)
-  local nrpn = GLOBAL_PARAM_PROPS['bank']
-  local msb_cc = nrpn[1]
-  local lsb_cc = nrpn[2]
-  midiutil.send_cc(self.midi_device, self.ch, msb_cc, 0)
-  midiutil.send_cc(self.midi_device, self.ch, lsb_cc, bank-1) -- 0-8
+  local nrpn = GLOBAL_PARAM_PROPS['bank'].nrpn
+  local lsb_cc = nrpn[1]
+  local msb_cc = nrpn[2]
+  midiutil.send_cc(self.midi_device, self.ch, lsb_cc, 0)
+  midiutil.send_cc(self.midi_device, self.ch, msb_cc, bank-1) -- 0-8
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end
 
