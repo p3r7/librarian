@@ -50,11 +50,13 @@ local function init_devices_from_conf(conf)
 
     local hw = HW.new(id_for_model, midi_device, hw_conf.ch)
 
-    for k, v in pairs(hw_conf.params) do
-      if k == 'midi_device' or tab.contains(HW.PARAMS, k) then
-        hw[k] = v
-      else
-        print(MOD_NAME .. ' - WARN - ' .. "Cannot set param "..k.."="..v.." for "..hw_conf.model .. '#' .. id_for_model .. ", unsupported param.")
+    if hw_conf.params ~= nil then
+      for k, v in pairs(hw_conf.params) do
+        if k == 'midi_device' or tab.contains(HW.PARAMS, k) then
+          hw[k] = v
+        else
+          print(MOD_NAME .. ' - WARN - ' .. "Cannot set param "..k.."="..v.." for "..hw_conf.model .. '#' .. id_for_model .. ", unsupported param.")
+        end
       end
     end
 
