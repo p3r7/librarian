@@ -1,6 +1,6 @@
 # librarian
 
-<img src="./rsc/img/librarian.png" width="285" height="295" style="image-rendering: pixelated;">
+![](./rsc/img/librarian_5x.png)
 
 mod that allows binding external hw to norns params.
 
@@ -33,7 +33,7 @@ return {
 
 #### Nord Drum 2 (`nord_drum_2`)
 
-![](./rsc/img/device/nord_drum_2.png)
+![](./rsc/img/nord_drum_2_5x.png)
 
 [implem](./lib/models/nord_drum_2.lua), [manual (PDF)](https://www.nordkeyboards.com/sites/default/files/files/downloads/manuals/nord-drum-2/Nord%20Drum%202%20English%20User%20Manual%20v3.0x%20Edition%20F.pdf)
 
