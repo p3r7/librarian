@@ -66,11 +66,186 @@ end
 
 
 -- ------------------------------------------------------------------------
--- API- norns-assignable params
+-- API - norns-assignable params
 
 function NordDrum2:get_nb_params()
   return (NordDrum2.NB_VOICES * (#NordDrum2.VOICE_PARAMS + 1)) + 1
 end
+
+
+-- ------------------------------------------------------------------------
+-- formatters
+
+local function format_raw(param)
+  return param:get()
+end
+
+local function format_nd2_basic(param)
+  local value = param:get()
+  return math.floor(util.linlin(0, 127, 0, 50, value))
+end
+
+local function format_nd2_20(param)
+  local value = param:get()
+  return math.floor(util.linlin(0, 127, 0, 20, value))
+end
+
+local function format_nd2_50_bp(param)
+  local value = param:get()
+  return math.floor(util.linlin(0, 127, -50, 50, value))
+end
+
+local function format_nd2_99(param)
+  local value = param:get()
+  return math.floor(util.linlin(0, 127, 0, 99, value))
+end
+
+local function format_nd2_pitch(param)
+  local value = param:get()
+  return value
+end
+
+local function format_nd2_balance(param)
+  local v = param:get()
+  local v2 = v - 64
+
+  local noise = 20
+  local tone = 20
+
+  if v2 < 0 then
+    tone = tone - util.round(util.linlin(0, 64, 0, 20, math.abs(v2)))
+  else
+    noise = noise - util.round(util.linlin(0, 64, 0, 20, v2))
+  end
+
+  return noise .. "-" .. tone
+end
+
+local TONE_WAVE_DESC = {
+  A1 = 'sine',
+  A2 = 'triangle',
+  A3 = 'saw',
+  A4 = 'square',
+  A5 = 'square hpf',
+  A6 = 'pulse',
+}
+
+local TONE_WAVES = {
+  'A1', 'A2', 'A3', 'A4', 'A5', 'A6',
+  'r1', 'r2',
+  't1',
+  'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
+  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7',
+  'P1', 'P2', 'P3', 'P4',
+  'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9',
+  'C1', 'C2', 'C3',
+}
+
+local TONE_WAVES_CC_VALS = {
+  A1 = 75,
+  A2 = 85,
+  A3 = 79,
+  A4 = 82,
+  A5 = 118,
+  A6 = 121,
+  r1 = 124,
+  r2 = 127,
+  t1 = 114,
+  F1 = 92,
+  F2 = 95,
+  F3 = 98,
+  F4 = 101,
+  F5 = 105,
+  F6 = 108,
+  H1 = 0,
+  H2 = 4,
+  H3 = 7,
+  H4 = 10,
+  H5 = 14,
+  H6 = 17,
+  H7 = 20,
+  P1 = 49,
+  P2 = 53,
+  P3 = 56,
+  P4 = 59,
+  d1 = 23,
+  d2 = 27,
+  d3 = 30,
+  d4 = 33,
+  d5 = 36,
+  d6 = 40,
+  d7 = 43,
+  d8 = 46,
+  d9 = 88,
+  C1 = 69,
+  C2 = 72,
+  C3 = 111,
+}
+
+local NOISE_FILTER_TYPES = {
+  "LP12", "LP24",
+  "bP6", "bP12",
+  "HP12", "HP24",
+  "HPhc",
+}
+
+local NOISE_FILTER_TYPES_CC_VALS = {
+  LP12 = 0,
+  LP24 = 22,
+  bP6 = 43,
+  bP12 = 64,
+  HP12 = 85,
+  HP24 = 106,
+  HPhc = 127,
+}
+
+local CLICK_TYPES = {
+  "n1", "n2", "n3", "n4", "n5", "n6", "n7", "n8", "n9",
+  "P1", "P2",
+}
+
+local CLICK_TYPES_CC_VALS = {
+  n1 = 0,
+  n2 = 4,
+  n3 = 8,
+  n4 = 11,
+  n5 = 15,
+  n6 = 19,
+  n7 = 22,
+  n8 = 26,
+  n9 = 30,
+  P1 = 33,
+  P2 = 37,
+  P3 = 40,
+  P4 = 44,
+  P5 = 48,
+  P6 = 51,
+  P7 = 55,
+  P8 = 59,
+  P9 = 62,
+  PH1 = 66,
+  PH2 = 69,
+  PH3 = 73,
+  PH4 = 77,
+  PH5 = 80,
+  PH6 = 84,
+  PH7 = 88,
+  PH8 = 91,
+  PH9 = 95,
+  C1 = 98,
+  C2 = 102,
+  C3 = 106,
+  C4 = 109,
+  C5 = 113,
+  C6 = 117,
+  C7 = 120,
+  C8 = 124,
+  C9 = 127,
+}
+
+local NOISE_ATTACK_MODES = {'AD',
+            'LFO1', 'LFO2', 'LFO3',
+            'Clap1', 'Clap2', 'Clap3', 'Clap4', 'Clap5', 'Clap6', 'Clap7', 'Clap8', 'Clap9'}
 
 
 -- ------------------------------------------------------------------------
@@ -131,8 +306,8 @@ NordDrum2.VOICE_PARAMS = {
   "tone_amp_eg_d_low",
 
   -- click OSC
-  "click_level",
   "click_type",
+  "click_level",
 
   -- mixer
   "mixer_balance",
@@ -158,24 +333,32 @@ local VOICE_PARAM_PROPS = {
   pan = {
     disp = "Pan",
     cc = 10,
+    fmt = format_nd2_balance,
   },
 
   -- noise OSC
+  noise_filter_type = {
+    disp = "Noise Filter Type",
+    cc = 15,
+    opts = NOISE_FILTER_TYPES,
+    outfn = function(v)
+      return NOISE_FILTER_TYPES_CC_VALS[NOISE_FILTER_TYPES[v]]
+    end,
+  },
   noise_filter_freq = {
     disp = "Noise Filter Frequency",
     cc = 14,
   },
-  noise_filter_type = {
-    disp = "Noise Filter Type",
-    cc = 15,
-  },
   noise_filter_eg = {
     disp = "Noise Filter Envelope",
     cc = 16,
+    -- FIXME: glitchy around 0
+    fmt = format_nd2_50_bp,
   },
   noise_filter_q = {
     disp = "Noise Filter Resonance",
     cc = 17,
+    fmt = format_nd2_20,
   },
   noise_amp_eg_a = {
     disp = "Noise Attack/Rate",
@@ -184,10 +367,18 @@ local VOICE_PARAM_PROPS = {
   noise_amp_eg_a_mode = {
     disp = "Noise Atk Mode",
     cc = 19,
+    opts = NOISE_ATTACK_MODES,
+    outfn = function(v)
+      return util.round(util.linlin(1, #NOISE_ATTACK_MODES, 0, 127, v))
+    end,
   },
   noise_amp_eg_d_type = {
     disp = "Noise Decay Type",
     cc = 20,
+    opts = {'Exp.', 'Lin.', 'Gate'},
+    outfn = function(v)
+      return util.round(util.linlin(1, 3, 0, 127, v))
+    end,
   },
   noise_amp_eg_d = {
     disp = "Noise Decay",
@@ -199,6 +390,14 @@ local VOICE_PARAM_PROPS = {
   },
 
   -- tone OSC
+  tone_wave = {
+    disp = "Tone Wave",
+    cc = 46,
+    opts = TONE_WAVES,
+    outfn = function(v)
+      return TONE_WAVES_CC_VALS[TONE_WAVES[v]]
+    end,
+  },
   tone_spectra = {
     disp = "Tone Spectra",
     cc = 30,
@@ -206,12 +405,29 @@ local VOICE_PARAM_PROPS = {
   },
   tone_pitch = {
     disp = "Tone Pitch",
-    nrpn = {31, 63},
-  },
-  tone_wave = {
-    disp = "Tone Wave",
-    cc = 46,
-    fmt = format_nd2_wave,
+    nrpn = {63, 31},
+    cs = controlspec.def{
+      min = 0.0,
+      max = 127.5,
+      warp = 'lin',
+      step = 0.5,
+      units = 'hz',
+      -- quantum = 0.5,
+      wrap = false,
+    },
+    outfn = function(v)
+      if math.floor(v) == v then
+        print("whole")
+        return v
+      end
+
+      print("half")
+
+      -- NB: that's how the nd2 serializes the 0.5 steps
+      -- essentially adding 1000000 0000000
+      local half_step = 64 << 7
+      return math.floor(v) + half_step
+    end,
   },
   tone_timbre_eg_d = {
     disp = "Tone Timbre Decay",
@@ -225,6 +441,10 @@ local VOICE_PARAM_PROPS = {
   tone_amp_eg_d_type = {
     disp = "Tone Decay Type",
     cc = 49,
+    opts = {'Exp.', 'Lin.'},
+    outfn = function(v)
+      return ( (v == 1) and 0 or 127 )
+    end,
   },
   tone_amp_eg_d = {
     disp = "Tone Decay",
@@ -246,6 +466,7 @@ local VOICE_PARAM_PROPS = {
   tone_bend = {
     disp = "Tone Bend Amount",
     cc = 54,
+    fmt = format_nd2_50_bp,
   },
   tone_bend_time = {
     disp = "Tone Bend Time",
@@ -307,35 +528,6 @@ local VOICE_PARAM_PROPS = {
 -- ------------------------------------------------------------------------
 -- consts
 
-local WAVE_ORDER = {
-  'A1', 'A2', 'A3', 'A4',
-  'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
-  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7',
-  'P1', 'P2', 'P3', 'P4',
-  'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9',
-  'C1', 'C2', 'C3',
-}
-
--- NB: this is a mess...
-local WAVE_CC_ORDER = {
-  'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'H7',
-  'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8',
-  'P1', 'P2', 'P3', 'P4',
-
-  -- 70-74 -> dead zone, sounds like P3
-  'P3',
-
-  'C1', 'C2',
-
-  'A1', 'A3', 'A4', 'A2',
-
-  'd9',
-
-  'F1', 'F2', 'F3', 'F4', 'F5', 'F6',
-
-  'C3',
-}
-
 local NB_BANKS = 8
 local NB_PGM_PER_BANK = 50
 
@@ -348,73 +540,6 @@ local function make_pgm_list()
   end
   return pgm_list
 end
-
-
--- ------------------------------------------------------------------------
--- formatters
-
-local function format_nd2_basic(param)
-  local value = param:get()
-  return util.round(util.linlin(0, 127, 0, 50, value))
-end
-
-local function format_nd2_99(param)
-  local value = param:get()
-  return util.round(util.linlin(0, 127, 0, 99, value))
-end
-
-local function format_nd2_balance(param)
-  local v = param:get()
-  local v2 = v - 64
-
-  local noise = 20
-  local tone = 20
-
-  if v2 < 0 then
-    tone = tone - util.round(util.linlin(0, 64, 0, 20, math.abs(v2)))
-  else
-    noise = noise - util.round(util.linlin(0, 64, 0, 20, v2))
-  end
-
-  return noise .. "-" .. tone
-end
-
-local function format_raw(param)
-  return param:get()
-end
-
-local function cc_to_wave(v)
-  if v == 0 then
-    v = 1
-  end
-
-  -- NB: still a glitch around d6/d7...
-
-  local wave_i = util.round(util.linlin(1, 127, 1, #WAVE_CC_ORDER, v))
-
-  return WAVE_CC_ORDER[wave_i]
-end
-
-local function wave_to_cc(w)
-  local wi = tab.key(WAVE_CC_ORDER, w)
-  return util.round(util.linlin(1, #WAVE_CC_ORDER, 1, 127, wi))
-end
-
-local function format_nd2_wave(param)
-  local v = param:get()
-
-  if v == 0 then
-    v = 1
-  end
-  -- NB: still a glitch around d6/d7...
-  local wave_i = util.round(util.linlin(1, 127, 1, #WAVE_CC_ORDER, v))
-
-  -- local wave_i = util.round(util.linlin(0, 119, 1, #WAVE_CC_ORDER, v))
-
-  return WAVE_CC_ORDER[wave_i]
-end
-
-
 
 local function param_display_name(p)
   if VOICE_PARAM_PROPS[p] == nil then
@@ -469,14 +594,51 @@ function NordDrum2:register_params()
 
     for _, p in ipairs(NordDrum2.VOICE_PARAMS) do
       local p_param = prefix..'_'..p
-      params:add{type = "number", id = p_param, name = param_display_name(p),
-                 min = 1, max = 127,
-                 formatter = param_formatter(p)
-      }
-      params:set_action(p_param,
-                        function(val)
-                          self:midi_set_param(v, p, val)
-      end)
+
+      if VOICE_PARAM_PROPS[p].opts ~= nil then
+        params:add_option(p_param, param_display_name(p),
+                          VOICE_PARAM_PROPS[p].opts)
+        params:set_action(p_param,
+                          function(val)
+                            local outfn = VOICE_PARAM_PROPS[p].outfn
+                            if outfn ~= nil then
+                              val = outfn(val)
+                            end
+                            self:midi_set_param(v, p, val)
+        end)
+      elseif VOICE_PARAM_PROPS[p].cs ~= nil then
+        params:add_control(p_param, param_display_name(p),
+                           VOICE_PARAM_PROPS[p].cs)
+        params:set_action(p_param,
+                          function(val)
+                            local outfn = VOICE_PARAM_PROPS[p].outfn
+                            if outfn ~= nil then
+                              val = outfn(val)
+                            end
+                            self:midi_set_param(v, p, val)
+        end)
+      else
+        local midi_path = param_midi_path(p)
+        local max = 127
+        if VOICE_PARAM_PROPS[p].max ~= nil then
+          max = VOICE_PARAM_PROPS[p].max
+        elseif midi_path.type == 'nrpn' then
+          max = 4095 -- 1111111 1111111
+        end
+
+        params:add{type = "number", id = p_param, name = param_display_name(p),
+                   min = 1, max = max,
+                   formatter = param_formatter(p)
+        }
+        params:set_action(p_param,
+                          function(val)
+                            local outfn = VOICE_PARAM_PROPS[p].outfn
+                            if outfn ~= nil then
+                              val = outfn(val)
+                            end
+                            self:midi_set_param(v, p, val)
+        end)
+      end
     end
   end
 end
@@ -492,10 +654,9 @@ function NordDrum2:midi_set_param(v, p, val)
   if midi_path.type == 'cc' then
     midiutil.send_cc(self.midi_device, ch, midi_path.cc, val)
   elseif midi_path.type == 'nrpn' then
-    local msb = midi_path.nrpn[1]
-    local lsb = midi_path.nrpn[2]
-    midiutil.send_cc(self.midi_device, ch, msb, val)
-    midiutil.send_cc(self.midi_device, ch, lsb, val)
+    local msb_cc = midi_path.nrpn[1]
+    local lsb_cc = midi_path.nrpn[2]
+    midiutil.send_nrpn(midi_device, ch, msb_cc, lsb_cc, val)
   end
 end
 
@@ -503,8 +664,7 @@ function NordDrum2:pgm_change(bank, program)
   local nrpn = GLOBAL_PARAM_PROPS['bank'].nrpn
   local msb_cc = nrpn[1]
   local lsb_cc = nrpn[2]
-  midiutil.send_cc(self.midi_device, self.ch, msb_cc, 0)
-  midiutil.send_cc(self.midi_device, self.ch, lsb_cc, bank-1) -- 0-8
+  midiutil.send_nrpn(midi_device, ch, msb_cc, lsb_cc, bank-1)
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end
 

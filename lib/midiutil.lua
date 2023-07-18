@@ -41,6 +41,23 @@ function midiutil.send_cc(midi_device, ch, cc, val)
   midiutil.send_msg(midi_device, msg)
 end
 
+function midiutil.send_nrpn(midi_device, ch, msb_cc, lsb_cc, val)
+  -- NB:
+  -- 16256 = 1111111 0000000
+  -- 127   = 0000000 1111111
+
+  local msb = (val & 16256) >> 7
+  local lsb = val & 127
+
+  print(msb .. " -> MSB CC " .. msb_cc)
+  print(lsb .. " -> LSB CC " .. lsb_cc)
+
+  -- 64 on cc 63
+
+  midiutil.send_cc(midi_device, ch, msb_cc, msb)
+  midiutil.send_cc(midi_device, ch, lsb_cc, lsb)
+end
+
 function midiutil.send_pgm_change(midi_device, ch, pgm)
   local msg = {
       type = "program_change",
