@@ -664,7 +664,7 @@ function NordDrum2:pgm_change(bank, program)
   local nrpn = GLOBAL_PARAM_PROPS['bank'].nrpn
   local msb_cc = nrpn[1]
   local lsb_cc = nrpn[2]
-  midiutil.send_nrpn(midi_device, ch, msb_cc, lsb_cc, bank-1)
+  midiutil.send_nrpn(self.midi_device, self.ch, msb_cc, lsb_cc, bank-1)
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end
 
