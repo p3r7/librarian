@@ -3,6 +3,7 @@
 -- NB: requires the deive to have been updated to v3.0
 --
 -- manual: https://www.nordkeyboards.com/sites/default/files/files/downloads/manuals/nord-drum-2/Nord%20Drum%202%20English%20User%20Manual%20v3.0x%20Edition%20F.pdf
+-- banks: https://www.nordkeyboards.com/sound-libraries/product-libraries/drums/nord-drum-2/nord-drum-2-factory-sounds
 
 -- ------------------------------------------------------------------------
 
@@ -92,7 +93,20 @@ end
 
 local function format_nd2_50_bp(param)
   local value = param:get()
-  return math.floor(util.linlin(0, 127, -50, 50, value))
+  local scaled = math.floor(util.linlin(0, 127, -50, 50, value))
+  if scaled > 0 then
+    return "+"..scaled
+  end
+  return scaled
+end
+
+local function format_nd2_24_bp(param)
+  local value = param:get()
+  local scaled = math.floor(util.linlin(0, 127, -24, 24, value))
+  if scaled > 0 then
+    return "+"..scaled
+  end
+  return scaled
 end
 
 local function format_nd2_99(param)
@@ -247,6 +261,23 @@ local NOISE_ATTACK_MODES = {'AD',
             'LFO1', 'LFO2', 'LFO3',
             'Clap1', 'Clap2', 'Clap3', 'Clap4', 'Clap5', 'Clap6', 'Clap7', 'Clap8', 'Clap9'}
 
+-- local EQ_FREQS = {
+--   "50" = 0,
+--   "70" = 3,
+--   "80" = 6,
+--   "100" = 8,
+--   "120" = 11,
+--   "150" = 13,
+--   "170" = 16,
+--   "200" = 18,
+--   "230" = 21,
+--   "260" = 23,
+--   "330" = 28,
+--   "380" = 31,
+--   "420" = 34,
+--   "470" = 36,
+--   "470" = 36,
+-- }
 
 -- ------------------------------------------------------------------------
 -- static conf
@@ -417,11 +448,8 @@ local VOICE_PARAM_PROPS = {
     },
     outfn = function(v)
       if math.floor(v) == v then
-        print("whole")
         return v
       end
-
-      print("half")
 
       -- NB: that's how the nd2 serializes the 0.5 steps
       -- essentially adding 1000000 0000000
@@ -508,6 +536,7 @@ local VOICE_PARAM_PROPS = {
   fx_eq_gain = {
     disp = "EQ Gain",
     cc = 26,
+    fmt = format_nd2_24_bp,
   },
   -- fx - echo
   fx_echo_fdbk = {
@@ -656,7 +685,7 @@ function NordDrum2:midi_set_param(v, p, val)
   elseif midi_path.type == 'nrpn' then
     local msb_cc = midi_path.nrpn[1]
     local lsb_cc = midi_path.nrpn[2]
-    midiutil.send_nrpn(midi_device, ch, msb_cc, lsb_cc, val)
+    midiutil.send_cc14(midi_device, ch, msb_cc, lsb_cc, val)
   end
 end
 
@@ -664,7 +693,7 @@ function NordDrum2:pgm_change(bank, program)
   local nrpn = GLOBAL_PARAM_PROPS['bank'].nrpn
   local msb_cc = nrpn[1]
   local lsb_cc = nrpn[2]
-  midiutil.send_nrpn(self.midi_device, self.ch, msb_cc, lsb_cc, bank-1)
+  midiutil.send_cc14(self.midi_device, self.ch, msb_cc, lsb_cc, bank-1)
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end
 
