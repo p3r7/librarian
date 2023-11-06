@@ -1,11 +1,10 @@
 -- librarian/model/nord drum 2
 --
--- NB: requires the deive to have been updated to v3.0
+-- NB: requires the device to have been updated to v3.0
 --
 -- manual: https://www.nordkeyboards.com/sites/default/files/files/downloads/manuals/nord-drum-2/Nord%20Drum%202%20English%20User%20Manual%20v3.0x%20Edition%20F.pdf
 -- banks: https://www.nordkeyboards.com/sound-libraries/product-libraries/drums/nord-drum-2/nord-drum-2-factory-sounds
 
--- ------------------------------------------------------------------------
 
 local NordDrum2 = {}
 NordDrum2.__index = NordDrum2
@@ -292,7 +291,7 @@ local GLOBAL_PARAMS = {
 local GLOBAL_PARAM_PROPS = {
   bank = {
     disp = "Bank Select",
-    nrpn = {0, 32},
+    cc14 = {0, 32},
   },
   voice = {
     disp = "Channel Focus",
@@ -436,7 +435,7 @@ local VOICE_PARAM_PROPS = {
   },
   tone_pitch = {
     disp = "Tone Pitch",
-    nrpn = {63, 31},
+    cc14 = {63, 31},
     cs = controlspec.def{
       min = 0.0,
       max = 127.5,
@@ -549,7 +548,7 @@ local VOICE_PARAM_PROPS = {
   },
   fx_echo_bpm = {
     disp = "Echo BPM",
-    nrpn = {29, 61},
+    cc14 = {29, 61},
   },
 }
 
@@ -588,11 +587,11 @@ local function param_midi_path(p)
     }
   end
 
-  local nrpn = VOICE_PARAM_PROPS[p].nrpn
-  if nrpn then
+  local cc14 = VOICE_PARAM_PROPS[p].cc14
+  if cc14 then
     return {
-      type = 'nrpn',
-      nrpn = nrpn,
+      type = 'cc14',
+      cc14 = cc14,
     }
   end
 end
@@ -651,7 +650,7 @@ function NordDrum2:register_params()
         local max = 127
         if VOICE_PARAM_PROPS[p].max ~= nil then
           max = VOICE_PARAM_PROPS[p].max
-        elseif midi_path.type == 'nrpn' then
+        elseif midi_path.type == 'cc14' then
           max = 4095 -- 1111111 1111111
         end
 
@@ -682,17 +681,22 @@ function NordDrum2:midi_set_param(v, p, val)
 
   if midi_path.type == 'cc' then
     midiutil.send_cc(self.midi_device, ch, midi_path.cc, val)
-  elseif midi_path.type == 'nrpn' then
-    local msb_cc = midi_path.nrpn[1]
-    local lsb_cc = midi_path.nrpn[2]
+  elseif midi_path.type == 'cc14' then
+    local msb_cc = midi_path.cc14[1]
+    local lsb_cc = midi_path.cc14[2]
     midiutil.send_cc14(midi_device, ch, msb_cc, lsb_cc, val)
   end
+
+  -- focus to edited channel/voice
+  -- doesn't seem to work...
+  -- local voice_cc = GLOBAL_PARAM_PROPS['voice'].cc
+  -- midiutil.send_cc(self.midi_device, ch, voice_cc, v-1)
 end
 
 function NordDrum2:pgm_change(bank, program)
-  local nrpn = GLOBAL_PARAM_PROPS['bank'].nrpn
-  local msb_cc = nrpn[1]
-  local lsb_cc = nrpn[2]
+  local cc14 = GLOBAL_PARAM_PROPS['bank'].cc14
+  local msb_cc = cc14[1]
+  local lsb_cc = cc14[2]
   midiutil.send_cc14(self.midi_device, self.ch, msb_cc, lsb_cc, bank-1)
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end

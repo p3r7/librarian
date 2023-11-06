@@ -6,7 +6,7 @@ local midiutil = {}
 -- ------------------------------------------------------------------------
 -- consts
 
-local DEVICE_ALL = "ALL"
+midiutil.MIDI_DEV_ALL = "ALL"
 
 
 -- ------------------------------------------------------------------------
@@ -21,6 +21,29 @@ end
 function midiutil.byte_to_str_midiox(b)
   return string.upper(string.format("%02x", b))
 end
+
+function midiutil.bytes_to_string_midiox(a)
+  local out = ""
+  for i, b in ipairs(a) do
+    if i ~= 1 then
+      out = out .. " "
+    end
+    out = out .. midiutil.byte_to_str_midiox(b)
+  end
+  return out
+end
+
+function midiutil.byte_array_diff(a, a2)
+  local diffs = {}
+  for i, b in ipairs(a) do
+    local b2 = a2[i]
+    if b ~= a2[i] then
+      diffs[i] = {b, b2}
+    end
+  end
+  return diffs
+end
+
 
 function midiutil.print_byte_array(a, fmt_fn, per_line)
   if fmt_fn == nil then fmt_fn = DEFAULT_BYTE_FORMATER end
@@ -62,6 +85,25 @@ function midiutil.are_equal_byte_arrays(a, a2)
   end
 
   for i, h in ipairs(a2) do
+    if a[i] ~= h then
+      return false
+    end
+  end
+  return true
+end
+
+if seamstress and tab.gather == nil then
+  function tab.gather(default_values, custom_values)
+    local result = {}
+    for k,v in pairs(default_values) do
+      result[k] = (custom_values[k] ~= nil) and custom_values[k] or v
+    end
+    return result
+  end
+end
+
+function midiutil.sysex_sarts_with(a, header)
+  for i, h in ipairs(header) do
     if a[i] ~= h then
       return false
     end
@@ -131,16 +173,38 @@ end
 -- ------------------------------------------------------------------------
 -- send - generic
 
-function midiutil.send_msg(devname, msg)
-  local data = midi.to_data(msg)
+function midiutil.send_msg(m, msg)
+  local data
+  if type(msg) == "table" and (msg.type == "sysex" or msg.type == "other") then
+    data = msg.raw
+  else
+    data = midi.to_data(msg)
+  end
+
   local had_effect = false
+
+  local devname = ""
+
+  if type(m) == "string" then
+    devname = m
+  elseif type(m) == "table" then
+    if m.dev and m.name then
+      -- devname = m.name
+      midi.vports[m.port]:send(data)
+      had_effect = true
+    elseif m.device then
+      m:send(data)
+      had_effect = true
+    end
+    return had_effect
+  end
 
   for _, dev in pairs(midi.devices) do
     if dev.port ~= nil and dev.name ~= 'virtual' then
-      if devname == MIDI_DEV_ALL or devname == dev.name then
+      if devname == midiutil.MIDI_DEV_ALL or devname == dev.name then
         midi.vports[dev.port]:send(data)
         had_effect = true
-        if devname ~= MIDI_DEV_ALL then
+        if devname ~= midiutil.MIDI_DEV_ALL then
           break
         end
       end
@@ -160,6 +224,18 @@ function midiutil.send_pgm_change(midi_device, ch, pgm)
       val = pgm,
       ch = ch,
     }
+  midiutil.send_msg(midi_device, msg)
+end
+
+
+-- ------------------------------------------------------------------------
+-- send - sysex
+
+function midiutil.send_sysex(midi_device, payload)
+  local msg = {
+    type = "sysex",
+    raw = payload,
+  }
   midiutil.send_msg(midi_device, msg)
 end
 
