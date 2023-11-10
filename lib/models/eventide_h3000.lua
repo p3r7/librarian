@@ -20,6 +20,13 @@ include('librarian/lib/core')
 
 
 -- ------------------------------------------------------------------------
+-- consts
+
+local FREQ_MIDI_SMOOTH_CLK = 1/20
+local MIDI_SMOOTH_THRESHOLD = 1/5
+
+
+-- ------------------------------------------------------------------------
 -- API - supported object params
 
 H3000.PARAMS = {
@@ -49,6 +56,11 @@ function H3000.new(id, midi_device, ch)
 
   p.device_id = DEVICE_ID
 
+  -- midi smoothing
+  p.clk_midi_smooth_t = 0
+  p.p_last_sent_t = {}
+  p.p_last_unsent_v = {}
+
   return p
 end
 
@@ -67,6 +79,7 @@ function H3000:get_nb_params()
 end
 
 function H3000:register_params()
+
   for algo_id, props in pairs(h3000.ALGOS) do
     local algo_name = props.name
     for _, p in ipairs(props.params) do
@@ -77,7 +90,17 @@ function H3000:register_params()
         params:set_action(param_id,
                           function(val)
                             local v = tkeys(p.values)[val]
-                            midiutil.send_nrpn(self.midi_device, self.ch, p.id, v)
+
+                            if self.p_last_sent_t[param_id] == nil
+                              or (self.clk_midi_smooth_t - self.p_last_sent_t[param_id]) > MIDI_SMOOTH_THRESHOLD then
+
+                              midiutil.send_nrpn(self.midi_device, self.ch, p.id, v)
+                              self.p_last_sent_t[param_id] = self.clk_midi_smooth_t
+                              self.p_last_unsent_v[param_id] = nil
+                            else
+                              self.p_last_unsent_v[param_id] = {p.id, v}
+                            end
+
         end)
       elseif p.min and p.max then
         params:add{type = "number", id = param_id, name = p.name,
@@ -86,15 +109,37 @@ function H3000:register_params()
         }
         params:set_action(param_id,
                           function(val)
+                            local v = val
                             if p.outfn then
-                              val = p.outfn(val)
+                              v = p.outfn(val)
                             end
-                            midiutil.send_nrpn(self.midi_device, self.ch, p.id, val)
-
+                            if self.p_last_sent_t[param_id] == nil
+                              or (self.clk_midi_smooth_t - self.p_last_sent_t[param_id]) > MIDI_SMOOTH_THRESHOLD then
+                              midiutil.send_nrpn(self.midi_device, self.ch, p.id, v)
+                              self.p_last_sent_t[param_id] = self.clk_midi_smooth_t
+                              self.p_last_unsent_v[param_id] = nil
+                            else
+                              self.p_last_unsent_v[param_id] = {p.id, v}
+                            end
         end)
       end
     end
   end
+
+  self.clock_midi_smooth = clock.run(function()
+      while true do
+        clock.sleep(FREQ_MIDI_SMOOTH_CLK)
+        self.clk_midi_smooth_t = self.clk_midi_smooth_t + FREQ_MIDI_SMOOTH_CLK
+
+        for param_id, p_v in pairs(self.p_last_unsent_v) do
+          if (self.clk_midi_smooth_t - self.p_last_sent_t[param_id]) > MIDI_SMOOTH_THRESHOLD then
+            midiutil.send_nrpn(self.midi_device, self.ch, table.unpack(p_v))
+            self.p_last_sent_t[param_id] = self.clk_midi_smooth_t
+            self.p_last_unsent_v[param_id] = nil
+          end
+        end
+      end
+  end)
 end
 
 

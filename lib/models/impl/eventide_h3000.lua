@@ -59,6 +59,26 @@ local KEYS = {
   [11] = "B",
 }
 
+function make_notes_table()
+  local out = {}
+
+  local k = 2
+  local octave = 1
+
+  for i=0,46 do
+    table.insert(out, KEYS[k] .. octave)
+    k = k + 1
+    if k > #KEYS-1 then
+      k = 0
+      octave = octave + 1
+    end
+  end
+
+  return out
+end
+
+local NOTES = make_notes_table()
+
 local function handle_neg(v)
   if v < 0 then
     v = 16384 + v
@@ -159,7 +179,116 @@ h3000.ALGOS = {
   },
   [101] = {
     name = "LAYERED SHIFT",
-    params = {},
+    params = {
+      -- basic
+      -- p1
+      {
+        id = 4,
+        name = "Left Pitch",
+        min = -1200,
+        max = 1200,
+        outfn = handle_neg,
+      },
+      {
+        id = 5,
+        name = "L Delay",
+        min = 0,
+        max = 1000,
+        unit = "ms",
+      },
+      {
+        id = 2,
+        name = "Left Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 6,
+        name = "Right Pitch",
+        min = -1200,
+        max = 1200,
+        outfn = handle_neg,
+      },
+      {
+        id = 7,
+        name = "R Delay",
+        min = 0,
+        max = 1000,
+        unit = "ms",
+      },
+      {
+        id = 3,
+        name = "Right Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p3
+      {
+        id = 0,
+        name = "Left Mix",
+        min = 0,
+        max = 100,
+        -- unit: %
+      },
+      {
+        id = 1,
+        name = "Right Mix",
+        min = 0,
+        max = 100,
+        -- unit: %
+      },
+      {
+        id = 11,
+        name = "Sustain",
+        values = {[0] = "On", [16383] = "Off"},
+        -- unit: %
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        -- unit: dB
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        -- unit: dB
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 8,
+        name = "Low Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 46,
+      },
+      {
+        id = 9,
+        name = "High Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 4,
+      },
+      {
+        id = 10,
+        name = "Source",
+        -- NB: 5 (Polyphonic) -> 95 (Mono)
+        min = 1,
+        max = 19,
+        outfn = function(v)
+          return math.floor(5 * v)
+        end,
+      },
+    },
   },
   [102] = {
     name = "DUAL SHIFT",
@@ -203,7 +332,60 @@ h3000.ALGOS = {
   },
   [112] = {
     name = "STUTTER",
-    params = {},
+    params = {
+      {
+        id = 0,
+        name = "Trigger",
+        is_trig = true,
+        v = 7594,
+      },
+      {
+        id = 1,
+        name = "Trigger 2",
+        is_trig = true,
+        v = 7594,
+      },
+      {
+        id = 2,
+        name = "Trigger 3",
+        is_trig = true,
+        v = 7594,
+      },
+      {
+        id = 3,
+        name = "Trigger 4",
+        is_trig = true,
+        v = 7594,
+      },
+      {
+        id = 4,
+        name = "Auto",
+        values = {
+          On = 0,
+          Off = 16383
+        },
+      },
+      {
+        id = 5,
+        name = "Speed",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 6,
+        name = "Program",
+        values = {
+          [0] = "Total Random",
+          [1] = "Random Sweep",
+          [2] = "Random Pitch",
+          [3] = "Just Stutter",
+        },
+      },
+      -- left / right mix
+      -- levels
+      -- expert
+
+    },
   },
   -- NB: 113, 120 & 121 might be the broadcast-specific time stretch thing & the sampler
   [114] = {
@@ -216,7 +398,25 @@ h3000.ALGOS = {
   },
   [116] = {
     name = "MULTI-SHIFT",
-    params = {},
+    params = {
+      -- basic
+      -- p1
+      {
+        id = 5,
+        name = "Left Pitch",
+        min = 0,
+        max = 3600,
+        outfn = function(v)
+          -- bellow 1.0
+          -- 0.125 - 0.944  ->  12784 - 16284
+          -- 35 steps of 100
+
+          -- 1.0 - 2.0  ->  0 - 1200, in step of 100
+          -- goes to 8.0 (3600) like that
+          return math.floor(5 * v)
+        end,
+      },
+    },
   },
   [117] = {
     name = "BAND DELAY",
@@ -282,7 +482,6 @@ end
 function h3000.pgm_change(m, ch, dev_id, pgm_id, request_pgm_dump)
   local pgm = pgm_id % 100
   local bank = math.floor((pgm_id - pgm) / 100)
-  print(bank .. " " .. pgm)
 
   h3000.set_bank(m, ch, bank)
   midiutil.send_pgm_change(m, ch, pgm)
