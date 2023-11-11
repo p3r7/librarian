@@ -86,6 +86,61 @@ local function handle_neg(v)
   return v
 end
 
+local function handle_neg_x100(v)
+  v = v * 100
+  if v < 0 then
+    v = 16384 + v
+  end
+  return v
+end
+
+
+-- ------------------------------------------------------------------------
+-- formatters
+
+local function fmt_low_note(param)
+  -- TODO: this one is super tricky as depends on the high note one
+  -- can get current id w/ `param.id`
+
+  return param:get()
+end
+
+local function fmt_high_note(param)
+  return "C" .. (param:get() + 4)
+end
+
+local function fmt_source(param)
+  local v = param:get()
+  -- local pct = v/19
+  return "P" .. string.rep(" ", v-1) .. "*" .. string.rep(" ", 19-v) .. "S"
+end
+
+local function fmt_image(param)
+  local v = param:get()
+  local WIDTH = 19
+  if v < 0 then
+    local offset = util.linlin(WIDTH, 0, 0, 99, -v)
+    return string.rep(" ", offset) .. "R" .. WIDTH - string.rep(" ", offset) .. "L"
+  else
+    local offset = util.linlin(WIDTH, 0, 0, 99, v)
+    return string.rep(" ", offset) .. "L" .. WIDTH - string.rep(" ", offset) .. "R"
+  end
+end
+
+local function fmt_multi_shift_pitch(param)
+  -- bellow 1.0
+  -- 0.125 - 0.944  ->  12784 - 16284
+
+  -- 1.0 - 2.0  ->  0 - 1200, in step of 100
+  -- goes to 8.0 (3600) like that
+  local v = param:get()
+  if v < 0 then
+    return string.format("%.3f", util.linlin(0, 3600, 1, 0.125, -v)) .. ":1"
+  else
+    return string.format("%.3f", util.linlin(0, 3600, 1, 8, v)) .. ":1"
+  end
+end
+
 -- ------------------------------------------------------------------------
 -- consts - algos
 
@@ -106,6 +161,7 @@ h3000.ALGOS = {
         values = DIATONIC_SHIFT_VOICE_MODES,
       },
       {
+        -- FIXME: not working...
         id = 35,
         name = "Quantize",
         values = {
@@ -124,38 +180,38 @@ h3000.ALGOS = {
         name = "Left Mix",
         min = 0,
         max = 100,
-        -- unit: %
+        unit = "%",
       },
       {
         id = 1,
         name = "Right Mix",
         min = 0,
         max = 100,
-        -- unit: %
+        unit = "%",
       },
       {
         id = 2,
         name = "L Feedback",
         min = 0,
         max = 100,
-        -- unit: %
+        unit = "%",
       },
       {
         id = 3,
         name = "R Feedback",
         min = 0,
         max = 100,
-        -- unit: %
+        unit = "%",
       },
       -- p3
-      -- `tune` can't be forced programmatically
+      -- `tune` can't be triggered programmatically
       -- `shownote` is just for display
       {
         id = 7,
         name = "Delay",
         min = 0,
         max = 1000,
-        -- unit: ms
+        unit = "ms",
       },
       -- levels
       {
@@ -163,7 +219,7 @@ h3000.ALGOS = {
         name = "Left In",
         min = -48,
         max = 48,
-        -- unit: dB
+        unit = "dB",
         outfn = handle_neg,
       },
       {
@@ -171,10 +227,232 @@ h3000.ALGOS = {
         name = "Right In",
         min = -48,
         max = 48,
-        -- unit: dB
+        unit = "dB",
         outfn = handle_neg,
       },
       -- expert
+      {
+        id = 11,
+        name = "Scale 1 Interval C",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 12,
+        name = "Scale 1 Interval C#",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 13,
+        name = "Scale 1 Interval D",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 14,
+        name = "Scale 1 Interval Eb",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 15,
+        name = "Scale 1 Interval E",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 16,
+        name = "Scale 1 Interval F",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 17,
+        name = "Scale 1 Interval F#",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 18,
+        name = "Scale 1 Interval G",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 19,
+        name = "Scale 1 Interval Ab",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 20,
+        name = "Scale 1 Interval A",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 21,
+        name = "Scale 1 Interval Bb",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 22,
+        name = "Scale 1 Interval B",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+
+
+      {
+        id = 23,
+        name = "Scale 2 Interval C",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 24,
+        name = "Scale 2 Interval C#",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 25,
+        name = "Scale 2 Interval D",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 26,
+        name = "Scale 2 Interval Eb",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 27,
+        name = "Scale 2 Interval E",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 28,
+        name = "Scale 2 Interval F",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 29,
+        name = "Scale 2 Interval F#",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 30,
+        name = "Scale 2 Interval G",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 31,
+        name = "Scale 2 Interval Ab",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 32,
+        name = "Scale 2 Interval A",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 33,
+        name = "Scale 2 Interval Bb",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+      {
+        id = 34,
+        name = "Scale 2 Interval B",
+        min = -24,
+        max = 12,
+        unit = "cents",
+        outfn = handle_neg_x100,
+      },
+
+      {
+        id = 8,
+        name = "Low Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 46,
+        fmt = fmt_low_note,
+      },
+      {
+        id = 9,
+        name = "High Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 4,
+        fmt = fmt_high_note,
+      },
+      {
+        id = 10,
+        name = "Source",
+        -- NB: 5 (Polyphonic) -> 95 (Mono)
+        min = 1,
+        max = 19,
+        outfn = function(v)
+          return math.floor(5 * v)
+        end,
+        fmt = fmt_source,
+      },
     }
   },
   [101] = {
@@ -231,20 +509,20 @@ h3000.ALGOS = {
         name = "Left Mix",
         min = 0,
         max = 100,
-        -- unit: %
+        unit = "%",
       },
       {
         id = 1,
         name = "Right Mix",
         min = 0,
         max = 100,
-        -- unit: %
+        unit = "%",
       },
       {
         id = 11,
         name = "Sustain",
         values = {[0] = "On", [16383] = "Off"},
-        -- unit: %
+        unit = "%",
       },
       -- levels
       {
@@ -252,7 +530,7 @@ h3000.ALGOS = {
         name = "Left In",
         min = -48,
         max = 48,
-        -- unit: dB
+        unit = "dB",
         outfn = handle_neg,
       },
       {
@@ -260,7 +538,7 @@ h3000.ALGOS = {
         name = "Right In",
         min = -48,
         max = 48,
-        -- unit: dB
+        unit = "dB",
         outfn = handle_neg,
       },
       -- expert
@@ -270,6 +548,7 @@ h3000.ALGOS = {
         -- TODO: custom formatter
         min = 0,
         max = 46,
+        fmt = fmt_low_note,
       },
       {
         id = 9,
@@ -277,6 +556,7 @@ h3000.ALGOS = {
         -- TODO: custom formatter
         min = 0,
         max = 4,
+        fmt = fmt_high_note,
       },
       {
         id = 10,
@@ -287,6 +567,7 @@ h3000.ALGOS = {
         outfn = function(v)
           return math.floor(5 * v)
         end,
+        fmt = fmt_source,
       },
     },
   },
@@ -402,19 +683,73 @@ h3000.ALGOS = {
       -- basic
       -- p1
       {
-        id = 5,
+        id = 0,
         name = "Left Pitch",
-        min = 0,
+        min = -3600,
         max = 3600,
-        outfn = function(v)
-          -- bellow 1.0
-          -- 0.125 - 0.944  ->  12784 - 16284
-          -- 35 steps of 100
-
-          -- 1.0 - 2.0  ->  0 - 1200, in step of 100
-          -- goes to 8.0 (3600) like that
-          return math.floor(5 * v)
-        end,
+        outfn = handle_neg,
+        fmt = fmt_multi_shift_pitch,
+      },
+      {
+        id = 1,
+        name = "L Pitch Delay",
+        min = 0,
+        max = 675,
+        unit = "ms",
+      },
+      {
+        id = 2,
+        name = "L Delay",
+        min = 0,
+        max = 700,
+        unit = "ms",
+      },
+      {
+        id = 3,
+        name = "Right Pitch",
+        min = -3600,
+        max = 3600,
+        outfn = handle_neg,
+        fmt = fmt_multi_shift_pitch,
+      },
+      {
+        id = 4,
+        name = "R Pitch Delay",
+        min = 0,
+        max = 675,
+        unit = "ms",
+      },
+      {
+        id = 5,
+        name = "R Delay",
+        min = 0,
+        max = 700,
+        unit = "ms",
+      },
+      {
+        id = 6,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 7,
+        name = "Global Feedback",
+        min = -1000,
+        max = 1000,
+        outfn = handle_neg,
+        fmt = function(param)
+          return string.format("%.1f", param:get() / 10) .. "%"
+        end
+      },
+      {
+        id = 8,
+        name = "Stereo Image",
+        min = -99,
+        max = 99,
+        outfn = handle_neg,
+        fmt = fmt_image,
       },
     },
   },
