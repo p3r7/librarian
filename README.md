@@ -66,6 +66,15 @@ the individual vocie channel approach works better w/ melodic sequencers (`awake
 | `global_channel_notes` | `int[]` | :x:       | `{60, 62, 64, 65, 67, 69}` | midi notes to trig individual voices using the global midi channel           |
 
 
+#### Eventide H3000 (`eventide_h3000`)
+
+[implem](./lib/models/eventide_h3000.lua), [manual (PDF)](https://cdn.eventideaudio.com/uploads/2021/09/H3000-Service.pdf)
+
+| param       | type  | mandatory | default (factory) value | comment                                                             |
+|-------------|-------|-----------|-------------------------|---------------------------------------------------------------------|
+| `device_id` | `int` | :x:       | `0`                     | unique H3000 midi id, set to a different value if you customized it |
+
+
 ## adding new models
 
 just create a new lua class under [`lib/models/`](./lib/models/).
