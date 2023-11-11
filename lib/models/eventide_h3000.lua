@@ -70,6 +70,7 @@ function H3000.new(id, midi_device, ch)
   p.pgm_dump_rcv = nil
 
   -- midi congestion handling - params
+  p.algo_p_map = {}
   p.clk_midi_smooth_t = 0
   p.p_last_sent_t = {}
   p.p_last_unsent_v = {}
@@ -115,6 +116,7 @@ function H3000:register_params()
 
   for algo_id, props in pairs(h3000.ALGOS) do
     local algo_name = props.name
+    self.algo_p_map[algo_id] = {}
     for _, p in ipairs(props.params) do
       local param_id = self.fqid .. '_' .. algo_id .. '_' .. p.id
 
@@ -133,8 +135,9 @@ function H3000:register_params()
                             else
                               self.p_last_unsent_v[param_id] = {p.id, v}
                             end
-
         end)
+        table.insert(self.algo_p_map[algo_id], param_id)
+        params:hide(param_id)
       elseif p.min and p.max then
         local fmt
         if p.fmt then
@@ -164,6 +167,8 @@ function H3000:register_params()
                               self.p_last_unsent_v[param_id] = {p.id, v}
                             end
         end)
+        table.insert(self.algo_p_map[algo_id], param_id)
+        params:hide(param_id)
       end
     end
   end
@@ -193,6 +198,24 @@ function H3000:param_congestion_clock(tick_d)
       self.p_last_sent_t[param_id] = self.clk_midi_smooth_t
       self.p_last_unsent_v[param_id] = nil
     end
+  end
+end
+
+function H3000:hide_params_for_algo(algo_id)
+  if algo_id == nil then
+    return
+  end
+  for _, param_id in ipairs(self.algo_p_map[algo_id]) do
+    params:hide(param_id)
+  end
+end
+
+function H3000:show_params_for_algo(algo_id)
+  if algo_id == nil then
+    return
+  end
+  for _, param_id in ipairs(self.algo_p_map[algo_id]) do
+    params:show(param_id)
   end
 end
 
@@ -267,7 +290,14 @@ function H3000:update_state_from_pgm_dump(raw_payload)
 
   self.current_pgm = pgm.id
   self.current_pgm_name = pgm.name
+  local prev_algo = self.current_algo
   self.current_algo = pgm.algo
+
+  if prev_algo ~= self.current_algo then
+    self:hide_params_for_algo(prev_algo)
+    self:show_params_for_algo(self.current_algo)
+    _menu.rebuild_params()
+  end
 
   if self.pgm_dump_rcv then
     self.pgm_dump_rcv(pgm)
