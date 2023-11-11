@@ -642,8 +642,8 @@ h3000.ALGOS = {
         id = 4,
         name = "Auto",
         values = {
-          On = 0,
-          Off = 16383
+          [0] = "On",
+          [16383] = "Off",
         },
       },
       {
