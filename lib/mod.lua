@@ -2,7 +2,19 @@
 -- @eigen
 
 local mod = require 'core/mods'
-local MOD_NAME = mod.this_name
+local MOD_NAME = mod.this_name or "librarian"
+
+local function tempty(t)
+  for k, v in pairs(t) do
+    t[k] = nil
+  end
+end
+
+
+-- -------------------------------------------------------------------------
+-- state
+
+local hw_list = {}
 
 
 -- -------------------------------------------------------------------------
@@ -49,7 +61,6 @@ local function init_devices_from_conf(conf)
     end
 
     local hw = HW.new(id_for_model, midi_device, hw_conf.ch)
-
     if hw_conf.params ~= nil then
       for k, v in pairs(hw_conf.params) do
         if k == 'midi_device' or tab.contains(HW.PARAMS, k) then
@@ -60,9 +71,15 @@ local function init_devices_from_conf(conf)
       end
     end
 
+    table.insert(hw_list, hw)
+    ::NEXT_HW_LOAD::
+  end
+end
+
+local function init_devices_params()
+  for _, hw in ipairs(hw_list) do
     params:add_group(hw.display_name, hw:get_nb_params())
     hw:register_params()
-    ::NEXT_HW_LOAD::
   end
 end
 
@@ -131,20 +148,37 @@ mod.hook.register("script_pre_init", MOD_NAME.."-script-pre-init",
                   function()
                     local script_init = init
                     init = function ()
+                      local conf = load_conf_file()
+                      if conf then
+                        init_devices_from_conf(conf)
+                      else
+                        print(MOD_NAME .. ' - ERR - ' .. "No conf file exists!")
+                      end
+
                       script_init()
 
-                      local conf = load_conf_file()
-                      if conf == nil then
-                        print(MOD_NAME .. ' - ERR - ' .. "No conf file exists, aborting.")
-                        return
+                      if conf then
+                        params:add_separator("librarian", "librarian")
+                        init_devices_params()
                       end
-                      params:add_separator("librarian", "librarian")
-                      init_devices_from_conf(conf)
                     end
                   end
 )
 
 mod.hook.register("script_post_cleanup", MOD_NAME.."-script-post-cleanup",
                   function()
+                    tempty(hw_list)
                   end
 )
+
+
+-- -------------------------------------------------------------------------
+-- api
+
+local api = {}
+
+function api.get_hw_list()
+  return hw_list
+end
+
+return api
