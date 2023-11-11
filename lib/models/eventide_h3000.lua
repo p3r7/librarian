@@ -103,7 +103,6 @@ end
 -- API - norns-assignable params
 
 function H3000:get_nb_params()
-
   local nb_algo_params = 0
   for _, algo_props in pairs(h3000.ALGOS) do
     nb_algo_params = nb_algo_params + #algo_props.params
@@ -315,17 +314,25 @@ end
 function H3000:pgm_change_clock(tick_d)
   self.clock_pgm_t = self.clock_pgm_t + tick_d
 
-  -- TODO: also temporize pgm_change if just did a pgm_dump
-  -- edge-case where H3000 craps and resets to either 100 of <bank>00
+  local needs_pgm_change = self.asked_pgm_t ~= nil
+    and (self.clock_pgm_t - self.asked_pgm_t) > TRIG_PGM_CHANGE_S
 
-  if self.asked_pgm_t ~= nil
-    and (self.clock_pgm_t - self.asked_pgm_t) > TRIG_PGM_CHANGE_S then
+  local needs_pgm_dump = self.sent_pgm_t ~= nil
+    and (self.clock_pgm_t - self.sent_pgm_t) > TRIG_PGM_DUMP_S
+
+  -- local recent_pgm_dump = (self.clock_pgm_t - self.last_dump_rcv_t) < TRIG_PGM_CHANGE_S
+  local recent_pgm_dump = false
+
+  -- NB: also temporizes pgm_change / pgm_dump if just did a pgm_dump
+  -- edge-case where H3000 craps and resets to either 100 of <bank>00
+  if needs_pgm_change
+    and not recent_pgm_dump then
     self:pgm_change_sync(self.asked_pgm)
     self.asked_pgm_t = nil
   end
 
-  if self.sent_pgm_t ~= nil
-    and (self.clock_pgm_t - self.sent_pgm_t) > TRIG_PGM_DUMP_S then
+  if needs_pgm_dump
+    and not recent_pgm_dump then
     self:dump_pgm()
     self.sent_pgm_t = nil
   end
