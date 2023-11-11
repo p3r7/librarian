@@ -118,7 +118,7 @@ function H3000:register_params()
     self.algo_p_map[algo_id] = {}
     for _, p in ipairs(props.params) do
       local param_id = self.fqid .. '_' .. algo_id .. '_' .. p.id
-
+      local is_registered = true
       if p.values then
         params:add_option(param_id, p.name, tvals(p.values))
         params:set_action(param_id,
@@ -135,8 +135,6 @@ function H3000:register_params()
                               self.p_last_unsent_v[param_id] = {p.id, v}
                             end
         end)
-        table.insert(self.algo_p_map[algo_id], param_id)
-        params:hide(param_id)
       elseif p.min and p.max then
         local fmt
         if p.fmt then
@@ -146,7 +144,6 @@ function H3000:register_params()
             return param:get() .. " " .. p.unit
           end
         end
-
         params:add{type = "number", id = param_id, name = p.name,
                    min = p.min, max = p.max,
                    formatter = fmt
@@ -166,6 +163,16 @@ function H3000:register_params()
                               self.p_last_unsent_v[param_id] = {p.id, v}
                             end
         end)
+      elseif p.is_trig then
+        params:add_trigger(param_id, p.name)
+        params:set_action(param_id, function(_v)
+                            midiutil.send_nrpn(self.midi_device, self.ch, p.id, p.v)
+        end)
+      else
+        is_registered = false
+        print("!!! UNEXPECTED PARAM "..param_id)
+      end
+      if is_registered then
         table.insert(self.algo_p_map[algo_id], param_id)
         params:hide(param_id)
       end
