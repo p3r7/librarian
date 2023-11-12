@@ -98,6 +98,10 @@ function H3000.new(id, midi_device, ch)
   return p
 end
 
+function H3000:cleanup()
+  clock.cancel(self.clock_params)
+  clock.cancel(self.clock_pgm)
+end
 
 -- ------------------------------------------------------------------------
 -- API - norns-assignable params
