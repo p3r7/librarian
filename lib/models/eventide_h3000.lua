@@ -178,21 +178,6 @@ function H3000:register_params()
       end
     end
   end
-
-  -- self.clock_midi_smooth = clock.run(function()
-  --     while true do
-  --       clock.sleep(FREQ_MIDI_SMOOTH_CLK)
-  --       self.clk_midi_smooth_t = self.clk_midi_smooth_t + FREQ_MIDI_SMOOTH_CLK
-
-  --       for param_id, p_v in pairs(self.p_last_unsent_v) do
-  --         if (self.clk_midi_smooth_t - self.p_last_sent_t[param_id]) > MIDI_SMOOTH_THRESHOLD then
-  --           midiutil.send_nrpn(self.midi_device, self.ch, table.unpack(p_v))
-  --           self.p_last_sent_t[param_id] = self.clk_midi_smooth_t
-  --           self.p_last_unsent_v[param_id] = nil
-  --         end
-  --       end
-  --     end
-  -- end)
 end
 
 function H3000:param_congestion_clock(tick_d)
