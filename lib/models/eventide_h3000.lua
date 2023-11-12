@@ -25,9 +25,13 @@ include('librarian/lib/core')
 local FREQ_MIDI_SMOOTH_CLK = 1/20
 local MIDI_SMOOTH_THRESHOLD = 1/5
 
-local FREQ_PGM_REFRESH = 1/20
+local FREQ_PGM_REFRESH = 1/40
+-- time to wait for the user to stop scrolling pgms before triggering pgm change
 local TRIG_PGM_CHANGE_S = 1/3
-local TRIG_PGM_DUMP_S = 1/5
+-- time to wait for pgm dump after having sent a pgm_change
+local TRIG_PGM_DUMP_S = 1/2
+-- time to wait for pgm change/dump after having sent a dump
+local AFTER_PGM_DUMP_WAIT_S = 1/2
 
 
 -- ------------------------------------------------------------------------
@@ -320,8 +324,7 @@ function H3000:pgm_change_clock(tick_d)
   local needs_pgm_dump = self.sent_pgm_t ~= nil
     and (self.clock_pgm_t - self.sent_pgm_t) > TRIG_PGM_DUMP_S
 
-  -- local recent_pgm_dump = (self.clock_pgm_t - self.last_dump_rcv_t) < TRIG_PGM_CHANGE_S
-  local recent_pgm_dump = false
+  local recent_pgm_dump = (self.clock_pgm_t - self.last_dump_rcv_t) < AFTER_PGM_DUMP_WAIT_S
 
   -- NB: also temporizes pgm_change / pgm_dump if just did a pgm_dump
   -- edge-case where H3000 craps and resets to either 100 of <bank>00
