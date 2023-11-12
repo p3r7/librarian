@@ -68,6 +68,8 @@ the individual vocie channel approach works better w/ melodic sequencers (`awake
 
 #### Eventide H3000 (`eventide_h3000`)
 
+![](./rsc/img/device/h3000_5x.png)
+
 [implem](./lib/models/eventide_h3000.lua), [manual (PDF)](https://cdn.eventideaudio.com/uploads/2021/09/H3000-Service.pdf)
 
 | param       | type  | mandatory | default (factory) value | comment                                                             |
