@@ -167,6 +167,11 @@ mod.hook.register("script_pre_init", MOD_NAME.."-script-pre-init",
 
 mod.hook.register("script_post_cleanup", MOD_NAME.."-script-post-cleanup",
                   function()
+                    for _, hw in ipairs(hw_list) do
+                      if hw.cleanup then
+                        hw:cleanup()
+                      end
+                    end
                     tempty(hw_list)
                   end
 )
