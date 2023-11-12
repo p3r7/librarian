@@ -223,10 +223,15 @@ end
 
 -- on startup, sometimes sends (PGM CHANGE - 0)
 
+function H3000:clear_pgm_state()
+  self.current_pgm_name = nil
+  self.current_algo = nil
+end
+
 function H3000:pgm_change(pgm_id)
-  -- self.asked_pgm_new = true
   self.asked_pgm_t = self.clock_pgm_t
   self.asked_pgm = pgm_id
+  self:clear_pgm_state()
 end
 
 -- NB: setting request_pgm_dump to true will trigger a pgm dump request
@@ -259,8 +264,7 @@ function H3000:update_state_from_pgm_change(bank_pgm)
   end
   if self.current_bank then
     self.current_pgm = self.current_bank * 100 + bank_pgm
-    self.current_pgm_name = nil
-    self.current_algo = nil
+    self:clear_pgm_state()
     self.sent_pgm_t = self.clock_pgm_t
     self.is_waiting_for_dump_after_pgm_change = true
   else
