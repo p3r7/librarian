@@ -349,9 +349,6 @@ end
 -- NB: setting request_pgm_dump to true will trigger a pgm dump request
 -- but this causes issues in some scenarios where the H3000 will crap if sent too soon
 function H3000:pgm_change_sync(pgm_id, request_pgm_dump)
-  if m == nil then
-    return
-  end
   self.last_sent_pgm_change = pgm_id
   if self.debug then
     print("-> PGM CHANGE - " .. pgm_id)
