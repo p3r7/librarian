@@ -12,6 +12,14 @@ end
 
 
 -- -------------------------------------------------------------------------
+-- consts
+
+local IGNORED_MIDI_DEVS = {
+  "16n", "bleached", "h2o2d",
+}
+
+
+-- -------------------------------------------------------------------------
 -- state
 
 local hw_list = {}
@@ -142,6 +150,29 @@ mod.menu.register(mod.this_name, m)
 
 
 -- -------------------------------------------------------------------------
+-- midi event callback
+
+function midi_event(dev, data, script_event_fn)
+  local d = midi.to_msg(data)
+
+  for _, hw in ipairs(hw_list) do
+    if hw.midi_event and (hw.midi_device == dev.name
+                          or (hw.midi_device == midiutil.MIDI_DEV_ALL and not tab.contains(IGNORED_MIDI_DEVS, dev.name))) then
+      local has_channel = tab.contains({"note_on", "note_off",  "pitchbend",
+                                        "key_pressure", "channel_pressure",
+                                        "cc", "program_change"}, d.type)
+      if not has_channel or d.ch == hw.ch then
+        hw:midi_event(dev, data)
+      end
+    end
+  end
+
+  if script_event_fn then
+    script_event_fn(data)
+  end
+end
+
+-- -------------------------------------------------------------------------
 -- plumbing
 
 mod.hook.register("script_pre_init", MOD_NAME.."-script-pre-init",
@@ -156,6 +187,15 @@ mod.hook.register("script_pre_init", MOD_NAME.."-script-pre-init",
                       end
 
                       script_init()
+
+                      for _, dev in pairs(midi.vports) do
+                        if dev.connected then
+                          local script_dev_event = dev.event
+                          dev.event = function(data)
+                            midi_event(dev, data, script_dev_event)
+                          end
+                        end
+                      end
 
                       if conf then
                         params:add_separator("librarian", "librarian")
