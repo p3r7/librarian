@@ -71,6 +71,7 @@ function H3000.new(id, midi_device, ch)
   p.current_pgm = nil
   p.current_pgm_name = nil
   p.current_algo = nil
+  p.prev_algo = nil
   p.pgm_dump_rcv = nil
 
   -- midi congestion handling - params
@@ -229,7 +230,10 @@ end
 
 function H3000:clear_pgm_state()
   self.current_pgm_name = nil
-  self.current_algo = nil
+  if self.current_algo then
+    self.prev_algo = self.current_algo
+    self.current_algo = nil
+  end
 end
 
 function H3000:pgm_change(pgm_id)
