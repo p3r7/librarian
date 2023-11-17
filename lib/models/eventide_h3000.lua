@@ -72,6 +72,7 @@ function H3000.new(id, midi_device, ch)
   p.current_pgm_name = nil
   p.current_algo = nil
   p.prev_algo = nil
+  p.pgm_change_rcv = nil
   p.pgm_dump_rcv = nil
 
   -- midi congestion handling - params
@@ -100,6 +101,14 @@ function H3000.new(id, midi_device, ch)
   end)
   p.last_dump_rcv_t = 0
 
+  -- midi input
+  p.sysex_payload = {}
+  p.is_sysex_dump_on = {}
+  p.current_nrpn_p_msb = {}
+  p.current_nrpn_p_lsb = {}
+  p.current_nrpn_v_msb = {}
+  p.current_nrpn_v_lsb = {}
+
   return p
 end
 
@@ -107,6 +116,7 @@ function H3000:cleanup()
   clock.cancel(self.clock_params)
   clock.cancel(self.clock_pgm)
 end
+
 
 -- ------------------------------------------------------------------------
 -- API - norns-assignable params
@@ -221,6 +231,100 @@ end
 
 
 -- ------------------------------------------------------------------------
+-- midi rcv
+
+function H3000:midi_event(dev, data)
+  local d = midi.to_msg(data)
+
+  if self.is_sysex_dump_on[dev.name] then
+    for _, b in pairs(data) do
+      table.insert(self.sysex_payload[dev.name], b)
+      if b == 0xf7 then
+        self.is_sysex_dump_on[dev.name] = false
+        self:handle_sysex(self.sysex_payload[dev.name])
+      end
+    end
+  elseif d.type == 'sysex' then
+    self.is_sysex_dump_on[dev.name] = true
+    self.sysex_payload[dev.name] = {}
+    for _, b in pairs(d.raw) do
+      table.insert(self.sysex_payload[dev.name], b)
+      if b == 0xf7 then
+        self.is_sysex_dump_on[dev.name] = false
+        handle_sysex(self.sysex_payload[dev.name])
+      end
+    end
+  elseif d.type == 'program_change' then
+    self:update_state_from_pgm_change(d.val)
+  elseif d.type == 'cc' then
+    if d.cc == 99 then
+      self.current_nrpn_p_msb[dev.name] = d.val
+    elseif d.cc == 98 then
+      self.current_nrpn_p_lsb[dev.name] = d.val
+    elseif d.cc == 6 then
+      self.current_nrpn_v_msb[dev.name] = d.val
+    elseif d.cc == 38 then
+      self.current_nrpn_v_lsb[dev.name] = d.val
+      local p = (self.current_nrpn_p_msb[dev.name] << 7) + self.current_nrpn_p_lsb[dev.name]
+      local v = (self.current_nrpn_v_msb[dev.name] << 7) + self.current_nrpn_v_lsb[dev.name]
+      if self.debug then
+        print("<- NRPN - #" .. p .. " - " .. v)
+      end
+    else
+      if self.debug then
+        print("<- CC - #" .. d.cc .. " - " .. d.val)
+      end
+    end
+  end
+end
+
+function H3000:handle_sysex(raw_payload)
+  if h3000.is_sysex_bank_select(raw_payload, self.device_id, self.ch) then
+    self:update_state_from_bank_change(raw_payload)
+  elseif h3000.is_sysex_pgm_dump(raw_payload, self.device_id) then
+    self:update_state_from_pgm_dump(raw_payload)
+
+    local payload = h3000.parse_sysex_payload_ascii_encoded(raw_payload)
+
+    -- param scanning
+    -- local is_new_payload = true
+    -- for pv, pp in pairs(prev_payloads) do
+    --   -- local diff = midiutil.diff_byte_arrays(raw_payload, pp)
+    --   -- if tab.count(diff) == 0 then
+    -- if midiutil.are_equal_byte_arrays(raw_payload, pp) then
+    -- is_new_payload = false
+    -- break
+    -- end
+    -- end
+    -- if is_new_payload then
+    --   prev_payloads[curr_p .. "_" .. curr_v] = raw_payload
+    --   -- midiutil.print_byte_array_midiox(raw_payload)
+    -- end
+
+    -- if was initiated by us (client) after a pgm_change...
+    -- if self.asked_pgm then
+    --   -- and is != than previous known one
+    --   local is_new_payload = prev_payload == nil
+    --     or not midiutil.are_equal_byte_arrays(raw_payload, prev_payload)
+    --   if is_new_payload then
+    --     print("new pgm: ".. my_h3000.asked_pgm .. " - " .. my_h3000.current_pgm_name)
+    --     prev_payload = raw_payload
+    --     scanned_pgm_list[my_h3000.asked_pgm] = {my_h3000.current_pgm_name, my_h3000.current_algo}
+    --   end
+    -- end
+
+    midiutil.print_byte_array_midiox(payload)
+
+  else
+    if self.debug then
+      print("<- UNKNOWN SYSEX (" .. (#raw_payload - 2) .. ")")
+    end
+    midiutil.print_byte_array_midiox(raw_payload)
+  end
+end
+
+
+-- ------------------------------------------------------------------------
 -- pgm
 
 -- NB: no echo back when initiating PGM CHANGE
@@ -277,6 +381,10 @@ function H3000:update_state_from_pgm_change(bank_pgm)
     self.is_waiting_for_dump_after_pgm_change = true
   else
     print("   WARN: can't handle as current bank unknown")
+  end
+
+  if self.pgm_change_rcv then
+    self.pgm_change_rcv(pgm)
   end
 end
 
