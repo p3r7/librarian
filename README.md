@@ -57,7 +57,7 @@ each voice can be triggered through the main midi channel (factory default `10`)
 
 the global channel approach works better w/ percusive sequencer scripts (such as `argen`) & traditional dum kit presets (bank `#1` & `#2`).
 
-the individual vocie channel approach works better w/ melodic sequencers (`awake`, `less_concepts`, `washi`...) & presets in bank `#3`.
+the individual voice channel approach works better w/ melodic sequencers (`awake`, `less_concepts`, `washi`...) & presets in bank `#3`.
 
 
 | param                  | type    | mandatory | default (factory) value    | comment                                                                      |
