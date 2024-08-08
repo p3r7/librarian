@@ -1,13 +1,11 @@
 
-local nd2 = {}
+local nd2_sysex = {}
 
 
 -- ------------------------------------------------------------------------
 -- deps
 
 local midiutil = include('librarian/lib/midiutil')
-
-include('librarian/lib/core')
 
 
 -- ------------------------------------------------------------------------
@@ -22,41 +20,43 @@ local MTCH_CHECKSUM  = 'checksum'
 
 
 -- ------------------------------------------------------------------------
--- sysex - ping
+-- ping
 
-nd2.SYSEX_PING_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, 0x07, 0x00, 0x06, 0x00, 0x7f}
-nd2.SYSEX_PING_RESP = {SYSEX_CLAVIA, 0x7f, 0x19, 0x07, 0x00, 0x07, 0x00,
-                       0x00, 0x4b, 0x00, 0x00, 0x37, 0x40, 0x18} -- NB: not sure this is universal!
+nd2_sysex.SYSEX_PING_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, 0x07, 0x00, 0x06, 0x00, 0x7f}
+-- NB: not sure this response is universal!
+-- tested against 2
+nd2_sysex.SYSEX_PING_RESP = {SYSEX_CLAVIA, 0x7f, 0x19, 0x07, 0x00, 0x07, 0x00,
+                       0x00, 0x4b, 0x00, 0x00, 0x37, 0x40, 0x18}
 
-function nd2.ping(midi_dev)
-  local payload = midiutil.sysex_with_header(nd2.SYSEX_PING_RQ)
+function nd2_sysex.ping(midi_dev)
+  local payload = midiutil.sysex_with_header(nd2_sysex.SYSEX_PING_RQ)
   midiutil.print_byte_array_midiox(payload)
   midi.send(midi_dev, payload)
 end
 
-function nd2.is_pong(payload)
+function nd2_sysex.is_pong(payload)
   return midiutil.are_equal_byte_arrays(midiutil.sysex_sans_header(payload),
-                                        nd2.SYSEX_PING_RESP)
+                                        nd2_sysex.SYSEX_PING_RESP)
 end
 
 
 -- ------------------------------------------------------------------------
 -- sysex - get uuid
 
-nd2.DEFAULT_UUID = 0x08
+nd2_sysex.DEFAULT_UUID = 0x08
 
-nd2.SYSEX_UUID_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, 0x07, 0x00, 0x02, 0x3a}
-nd2.SYSEX_UUID_RESP = {SYSEX_CLAVIA, 0x7f, 0x19, 0x07, 0x00, 0x03, 0x02,
+nd2_sysex.SYSEX_UUID_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, 0x07, 0x00, 0x02, 0x3a}
+nd2_sysex.SYSEX_UUID_RESP = {SYSEX_CLAVIA, 0x7f, 0x19, 0x07, 0x00, 0x03, 0x02,
                        0x07, 0x00, MTCH_UUID, 0x03, 0x48}
 
-function nd2.ask_uuid(midi_dev)
-  local payload = midiutil.sysex_with_header(nd2.SYSEX_UUID_RQ)
+function nd2_sysex.ask_uuid(midi_dev)
+  local payload = midiutil.sysex_with_header(nd2_sysex.SYSEX_UUID_RQ)
   midi.send(midi_dev, payload)
 end
 
-function nd2.extract_uuid(payload)
+function nd2_sysex.extract_uuid(payload)
   local ok, matches = midiutil.sysex_match(midiutil.sysex_sans_header(payload),
-                                           nd2.SYSEX_UUID_RESP)
+                                           nd2_sysex.SYSEX_UUID_RESP)
   if ok then
     return true, matches[MTCH_UUID]
   end
@@ -64,8 +64,8 @@ function nd2.extract_uuid(payload)
   return false, nil
 end
 
-function nd2.is_uuid_resp(payload)
-  local ok, _ = nd2.extract_uuid(payload)
+function nd2_sysex.is_uuid_resp(payload)
+  local ok, _ = nd2_sysex.extract_uuid(payload)
   return ok
 end
 
@@ -73,15 +73,19 @@ end
 -- ------------------------------------------------------------------------
 -- sysex - in-mem pgm dump
 
-nd2.SYSEX_MEM_PGM_DUMP_RESP_HEADER = {
+-- NB: using a key combo on the device, we can trig a PGM DUMP of the program as it exists in memory
+-- i.e. with all the (unsaved) modifications
+-- sadly there doesn't seem to be a request to trig this PGM DUMP
+
+nd2_sysex.SYSEX_MEM_PGM_DUMP_RESP_HEADER = {
   SYSEX_CLAVIA, 0x7f, 0x19, 0x08, 0x03, 0x06, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 }
 
--- nd2.SYSEX_PGM_MEM_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, MTCH_UUID, 0x03, 0x07,
+-- nd2_sysex.SYSEX_PGM_MEM_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, MTCH_UUID, 0x03, 0x07,
 --                         0x00, 0x00, MTCH_CHECKSUM}
 
--- function nd2.mem_pgm_dump(midi_dev, uuid, bank, pgm)
---   local payload = midiutil.sysex_with_header(nd2.SYSEX_PGM_MEM_RQ)
+-- function nd2_sysex.mem_pgm_dump(midi_dev, uuid, bank, pgm)
+--   local payload = midiutil.sysex_with_header(nd2_sysex.SYSEX_PGM_MEM_RQ)
 --   local vars = {
 --     [MTCH_UUID] = uuid,
 --     [MTCH_BANK] = 0x40 + bank - 1,
@@ -92,13 +96,13 @@ nd2.SYSEX_MEM_PGM_DUMP_RESP_HEADER = {
 --   midi.send(midi_dev, payload)
 -- end
 
-function nd2.is_mem_pgm_dump(payload)
+function nd2_sysex.is_mem_pgm_dump(payload)
   local payload = midiutil.sysex_sans_header(payload)
   -- return midiutil.are_equal_byte_arrays(payload,
-  --                                       nd2.SYSEX_MEM_PGM_DUMP_RESP_HEADER)
+  --                                       nd2_sysex.SYSEX_MEM_PGM_DUMP_RESP_HEADER)
 
-  local ok, _matches = midiutil.sysex_match(tab_sliced(payload, 1, #nd2.SYSEX_MEM_PGM_DUMP_RESP_HEADER),
-                                            nd2.SYSEX_MEM_PGM_DUMP_RESP_HEADER)
+  local ok, _matches = midiutil.sysex_match(tab_sliced(payload, 1, #nd2_sysex.SYSEX_MEM_PGM_DUMP_RESP_HEADER),
+                                            nd2_sysex.SYSEX_MEM_PGM_DUMP_RESP_HEADER)
   if ok then
     return true
   end
@@ -110,7 +114,7 @@ end
 -- ------------------------------------------------------------------------
 -- sysex - pgm dump
 
-nd2.SYSEX_PGM_DUMP_RESP_HEADER = {
+nd2_sysex.SYSEX_PGM_DUMP_RESP_HEADER = {
   SYSEX_CLAVIA, 0x7f, 0x19, 0x08, 0x03, 0x08, MTCH_BANK, MTCH_PGM, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 }
 
@@ -157,11 +161,11 @@ local PGM_DUMP_CHECKSUM = {
   },
 }
 
-nd2.SYSEX_PGM_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, MTCH_UUID, 0x03, 0x07,
-                    MTCH_BANK, MTCH_PGM, MTCH_CHECKSUM}
+nd2_sysex.SYSEX_PGM_RQ = {SYSEX_CLAVIA, 0x7f, 0x7f, MTCH_UUID, 0x03, 0x07,
+                          MTCH_BANK, MTCH_PGM, MTCH_CHECKSUM}
 
-function nd2.pgm_dump(midi_dev, uuid, bank, pgm)
-  local payload = midiutil.sysex_with_header(nd2.SYSEX_PGM_RQ)
+function nd2_sysex.pgm_dump(midi_dev, uuid, bank, pgm)
+  local payload = midiutil.sysex_with_header(nd2_sysex.SYSEX_PGM_RQ)
   local vars = {
     [MTCH_UUID] = uuid,
     [MTCH_BANK] = 0x40 + bank - 1,
@@ -172,13 +176,13 @@ function nd2.pgm_dump(midi_dev, uuid, bank, pgm)
 end
 
 
-function nd2.is_pgm_dump(payload)
+function nd2_sysex.is_pgm_dump(payload)
   local payload = midiutil.sysex_sans_header(payload)
   -- return midiutil.are_equal_byte_arrays(payload,
-  --                                       nd2.SYSEX_PGM_DUMP_RESP_HEADER)
+  --                                       nd2_sysex.SYSEX_PGM_DUMP_RESP_HEADER)
 
-  local ok, _matches = midiutil.sysex_match(tab_sliced(payload, 1, #nd2.SYSEX_PGM_DUMP_RESP_HEADER),
-                                            nd2.SYSEX_PGM_DUMP_RESP_HEADER)
+  local ok, _matches = midiutil.sysex_match(tab_sliced(payload, 1, #nd2_sysex.SYSEX_PGM_DUMP_RESP_HEADER),
+                                            nd2_sysex.SYSEX_PGM_DUMP_RESP_HEADER)
   if ok then
     return true
   end
@@ -186,12 +190,13 @@ function nd2.is_pgm_dump(payload)
   return false
 end
 
-function nd2.get_pgm_dump_data(payload)
+function nd2_sysex.get_pgm_dump_data(payload)
   local payload = midiutil.sysex_sans_header(payload)
   -- -4 is for the payload at the end
-  return tab_sliced(payload, #nd2.SYSEX_PGM_DUMP_RESP_HEADER+1, -4)
+  return tab_sliced(payload, #nd2_sysex.SYSEX_PGM_DUMP_RESP_HEADER+1, -4)
 end
+
 
 -- ------------------------------------------------------------------------
 
-return nd2
+return nd2_sysex
