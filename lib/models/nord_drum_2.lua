@@ -28,6 +28,11 @@ include('librarian/lib/core')
 
 
 -- ------------------------------------------------------------------------
+-- consts
+
+local DO_EXPOSE_EDIT_ALL_VOICE_PARAMS = true
+
+-- ------------------------------------------------------------------------
 -- API - exposed object params
 
 NordDrum2.PARAMS = {
@@ -75,7 +80,19 @@ end
 -- API - norns-assignable params
 
 function NordDrum2:get_nb_params()
-  return ((nd2.NB_VOICES + 1) * (#nd2.VOICE_PARAMS + 1)) + 1
+  -- NB: in reality we have 2 `nd2.GLOBAL_PARAMS` for selecting the BANK & the PGM
+  -- ...but we expose them as a single param for convenience
+  local nb_global_params = 1
+
+  local nb_voices = nd2.NB_VOICES
+  if DO_EXPOSE_EDIT_ALL_VOICE_PARAMS then
+    nb_voices = nb_voices + 1
+  end
+
+  -- NB: `+ 1` is for the separators
+  local nb_voice_params = (nb_voices * (#nd2.VOICE_PARAMS + 1))
+
+  return nb_global_params + nb_voice_params
 end
 
 
@@ -139,12 +156,14 @@ function NordDrum2:register_params()
     end)
   end
 
-  params:add_separator(self.fqid..'_v_all', "All Voices ")
+  if DO_EXPOSE_EDIT_ALL_VOICE_PARAMS then
+    params:add_separator(self.fqid..'_v_all', "All Voices ")
 
-  for _, p in pairs(nd2.VOICE_PARAMS) do
-    paramutils.add_param(self, nd2.VOICE_PARAM_PROPS, p, function(p, val)
-                           self:set_param_all_voices(p, val)
-    end)
+    for _, p in pairs(nd2.VOICE_PARAMS) do
+      paramutils.add_param(self, nd2.VOICE_PARAM_PROPS, p, function(p, val)
+                             self:set_param_all_voices(p, val)
+      end)
+    end
   end
 
 end
