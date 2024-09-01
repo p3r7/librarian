@@ -241,6 +241,29 @@ end
 
 
 -- ------------------------------------------------------------------------
+-- send - note on / off
+
+function midiutil.send_note_on(midi_device, note_num, vel, ch)
+  local msg = {
+    type = "note_on",
+    note = note_num,
+    vel = vel,
+    ch = chan,
+  }
+  midiutil.send_msg(midi_device, msg)
+end
+
+function midiutil.send_note_off(midi_device, note_num, vel, ch)
+  local msg = {
+    type = "note_off",
+    note = note_num,
+    ch = chan,
+  }
+  midiutil.send_msg(midi_device, msg)
+end
+
+
+-- ------------------------------------------------------------------------
 -- send - cc
 
 -- range: 0-127

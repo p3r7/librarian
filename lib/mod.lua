@@ -4,6 +4,8 @@
 local mod = require 'core/mods'
 local MOD_NAME = mod.this_name or "librarian"
 
+local midiutil = include('librarian/lib/midiutil')
+
 local function tempty(t)
   for k, v in pairs(t) do
     t[k] = nil
@@ -24,6 +26,8 @@ local IGNORED_MIDI_DEVS = {
 
 local hw_list = {}
 
+local conf = nil
+
 
 -- -------------------------------------------------------------------------
 -- conf file
@@ -40,7 +44,6 @@ local function load_conf_file()
 end
 
 local function init_devices_from_conf(conf)
-  local midiutil = include('librarian/lib/midiutil')
 
   local model_libs = {}
   local model_counts = {}
@@ -68,7 +71,7 @@ local function init_devices_from_conf(conf)
       midi_device = midiutil.MIDI_DEV_ALL
     end
 
-    local hw = HW.new(id_for_model, midi_device, hw_conf.ch)
+    local hw = HW.new(id_for_model, midi_device, hw_conf.ch, hw_conf.nb)
     if hw_conf.params ~= nil then
       for k, v in pairs(hw_conf.params) do
         if k == 'midi_device' or tab.contains(HW.PARAMS, k) then
@@ -146,30 +149,10 @@ end
 m.keycode = function(code, value)
 end
 
-mod.menu.register(mod.this_name, m)
-
-
--- -------------------------------------------------------------------------
--- midi event callback
-
-function midi_event(dev, data, script_event_fn)
-  local d = midi.to_msg(data)
-
-  for _, hw in ipairs(hw_list) do
-    if hw.midi_event and (hw.midi_device == dev.name
-                          or (hw.midi_device == midiutil.MIDI_DEV_ALL and not tab.contains(IGNORED_MIDI_DEVS, dev.name))) then
-      local has_channel = tab.contains({"note_on", "note_off",  "pitchbend",
-                                        "key_pressure", "channel_pressure",
-                                        "cc", "program_change"}, d.type)
-      if not has_channel or d.ch == hw.ch then
-        hw:midi_event(dev, data)
-      end
-    end
-  end
-
-  if script_event_fn then
-    script_event_fn(data)
-  end
+-- NB: only register menu when mod is active
+-- the mod can be used as a lib even when not active
+if mod.this_name then
+  mod.menu.register(MOD_NAME, m)
 end
 
 -- -------------------------------------------------------------------------
@@ -177,33 +160,69 @@ end
 
 mod.hook.register("script_pre_init", MOD_NAME.."-script-pre-init",
                   function()
-                    local script_init = init
-                    init = function ()
-                      local conf = load_conf_file()
-                      if conf then
-                        init_devices_from_conf(conf)
-                      else
-                        print(MOD_NAME .. ' - ERR - ' .. "No conf file exists!")
+
+                    -- local script_init = init
+                    -- init = function ()
+
+                    conf = load_conf_file()
+                    if conf then
+                      init_devices_from_conf(conf)
+
+                      for _, hw in ipairs(hw_list) do
+                        if hw.nb and hw.register_nb_players then
+                          print(MOD_NAME .. " - registering nb players for: "..hw.display_name)
+                          hw:register_nb_players()
+                        end
                       end
 
-                      script_init()
+                    else
+                      print(MOD_NAME .. ' - ERR - ' .. "No conf file exists!")
+                    end
 
-                      for _, dev in pairs(midi.vports) do
-                        if dev.connected then
-                          local script_dev_event = dev.event
-                          dev.event = function(data)
-                            midi_event(dev, data, script_dev_event)
+                    -- script_init()
+
+end)
+
+mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
+                  function()
+
+                    local function midi_event(dev, data, script_event_fn)
+                      -- local midiutil = include('librarian/lib/midiutil')
+
+                      local d = midi.to_msg(data)
+
+                      for _, hw in ipairs(hw_list) do
+                        if hw.midi_event and (hw.midi_device == dev.name
+                                              or (hw.midi_device == midiutil.MIDI_DEV_ALL and not tab.contains(IGNORED_MIDI_DEVS, dev.name))) then
+                          local has_channel = tab.contains({"note_on", "note_off",  "pitchbend",
+                                                            "key_pressure", "channel_pressure",
+                                                            "cc", "program_change"}, d.type)
+                          if not has_channel or d.ch == hw.ch then
+                            hw:midi_event(dev, data)
                           end
                         end
                       end
 
-                      if conf then
-                        params:add_separator("librarian", "librarian")
-                        init_devices_params()
+                      if script_event_fn then
+                        script_event_fn(data)
                       end
                     end
-                  end
-)
+
+                    for _, dev in pairs(midi.vports) do
+                      if dev.connected then
+                        local script_dev_event = dev.event
+                        dev.event = function(data)
+                          midi_event(dev, data, script_dev_event)
+                        end
+                      end
+                    end
+
+                    if conf then
+                      params:add_separator("librarian", "librarian")
+                      init_devices_params()
+                    end
+
+end)
 
 mod.hook.register("script_post_cleanup", MOD_NAME.."-script-post-cleanup",
                   function()
@@ -221,6 +240,10 @@ mod.hook.register("script_post_cleanup", MOD_NAME.."-script-post-cleanup",
 -- api
 
 local api = {}
+
+function api.is_active()
+  return (mod.this_name ~= nil)
+end
 
 function api.get_hw_list()
   return hw_list

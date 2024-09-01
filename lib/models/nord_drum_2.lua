@@ -20,6 +20,7 @@ local controlspec = require "controlspec"
 local formatters = require "formatters"
 local midiutil = include('librarian/lib/midiutil')
 local paramutils = include('librarian/lib/paramutils')
+local nbutils = include('librarian/lib/nbutils')
 
 local nd2 = include('librarian/lib/models/impl/nord_drum_2/nord_drum_2')
 local nd2_fmt = include('librarian/lib/models/impl/nord_drum_2/fmt')
@@ -30,7 +31,8 @@ include('librarian/lib/core')
 -- ------------------------------------------------------------------------
 -- consts
 
-local DO_EXPOSE_EDIT_ALL_VOICE_PARAMS = true
+local DO_EXPOSE_EDIT_ALL_VOICE_PARAMS = false
+
 
 -- ------------------------------------------------------------------------
 -- API - exposed object params
@@ -49,7 +51,7 @@ local GLOBAL_CH_NOTES = {60, 62, 64, 65, 67, 69}
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function NordDrum2.new(id, midi_device, ch)
+function NordDrum2.new(id, midi_device, ch, nb)
   local p = setmetatable({}, NordDrum2)
 
   p.kind = KIND
@@ -69,6 +71,11 @@ function NordDrum2.new(id, midi_device, ch)
   p.global_channel_notes = GLOBAL_CH_NOTES
 
   p.voice_channels = VOICE_CH_LIST
+
+  p.nb = false
+  if nb then
+    p.nb = true
+  end
 
   p.default_fmt = nd2_fmt.format_basic
 
@@ -93,6 +100,24 @@ function NordDrum2:get_nb_params()
   local nb_voice_params = (nb_voices * (#nd2.VOICE_PARAMS + 1))
 
   return nb_global_params + nb_voice_params
+end
+
+
+-- ------------------------------------------------------------------------
+-- API - nb
+
+function NordDrum2:register_nb_players()
+  nbutils.register_player(self, "global")
+
+  for v=1,nd2.NB_VOICES do
+    local hw = {
+      fqid = self.fqid,
+      display_name = self.display_name,
+      midi_device = self.midi_device,
+      ch = self.voice_channels[v],
+    }
+    nbutils.register_player(hw, "v"..v)
+  end
 end
 
 
