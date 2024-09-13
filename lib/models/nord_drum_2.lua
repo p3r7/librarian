@@ -51,7 +51,7 @@ local GLOBAL_CH_NOTES = {60, 62, 64, 65, 67, 69}
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function NordDrum2.new(id, midi_device, ch, nb)
+function NordDrum2.new(id, count, midi_device, ch, nb)
   local p = setmetatable({}, NordDrum2)
 
   p.kind = KIND
@@ -59,7 +59,10 @@ function NordDrum2.new(id, midi_device, ch, nb)
 
   p.id = id
   p.fqid = p.shorthand.."_"..id
-  p.display_name = p.kind.." #"..id
+  p.display_name = p.kind
+  if count > 1 then
+    p.display_name = p.display_name.." #"..id
+  end
 
   p.midi_device = midi_device
 

@@ -48,16 +48,11 @@ local function init_devices_from_conf(conf)
 
   local model_libs = {}
   local model_counts = {}
+  local hw_model_id = {}
 
-  for _, hw_conf in ipairs(conf.devices) do
+  for i, hw_conf in ipairs(conf.devices) do
     local HW
-    local id_for_model = 1
-
-    if model_libs[hw_conf.model] ~= nil then
-      HW = model_libs[hw_conf.model]
-      model_counts[hw_conf.model] = model_counts[hw_conf.model] + 1
-      id_for_model = model_counts[hw_conf.model]
-    else
+    if model_libs[hw_conf.model] == nil then
       HW = include('librarian/lib/models/' .. hw_conf.model)
       if HW == nil then
         print(MOD_NAME .. ' - WARN - ' .. "Unknown model ".. hw_conf.model .. ', skipping.')
@@ -65,6 +60,17 @@ local function init_devices_from_conf(conf)
       end
       model_libs[hw_conf.model] = HW
       model_counts[hw_conf.model] = 1
+    else
+      model_counts[hw_conf.model] = model_counts[hw_conf.model] + 1
+    end
+    hw_model_id[i] = model_counts[hw_conf.model]
+
+    ::NEXT_HW_LOAD::
+  end
+
+  for i, hw_conf in ipairs(conf.devices) do
+    if hw_model_id[i] == nil then
+      goto NEXT_HW_INIT
     end
 
     local midi_device = hw_conf.device
@@ -72,7 +78,10 @@ local function init_devices_from_conf(conf)
       midi_device = midiutil.MIDI_DEV_ALL
     end
 
-    local hw = HW.new(id_for_model, midi_device, hw_conf.ch, hw_conf.nb)
+    local HW = model_libs[hw_conf.model]
+    local id_for_model = hw_model_id[i]
+    local count_for_model = model_counts[hw_conf.model]
+    local hw = HW.new(id_for_model, count_for_model, midi_device, hw_conf.ch, hw_conf.nb)
     if hw_conf.params ~= nil then
       for k, v in pairs(hw_conf.params) do
         if k == 'midi_device' or tab.contains(HW.PARAMS, k) then
@@ -82,9 +91,9 @@ local function init_devices_from_conf(conf)
         end
       end
     end
-
     table.insert(hw_list, hw)
-    ::NEXT_HW_LOAD::
+
+    ::NEXT_HW_INIT::
   end
 end
 

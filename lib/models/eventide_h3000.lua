@@ -47,7 +47,7 @@ local DEVICE_ID = 0
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function H3000.new(id, midi_device, ch)
+function H3000.new(id, count, midi_device, ch)
   local p = setmetatable({}, H3000)
 
   p.kind = H3000.KIND
@@ -55,7 +55,10 @@ function H3000.new(id, midi_device, ch)
 
   p.id = id
   p.fqid = p.shorthand.."_"..id
-  p.display_name = p.kind.." #"..id
+  p.display_name = p.kind
+  if count > 1 then
+    p.display_name = p.display_name.." #"..id
+  end
 
   p.midi_device = midi_device
 
