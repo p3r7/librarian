@@ -10,7 +10,7 @@ return {
   -- params
   params = {
     -- mod touch strip
-    -- values sent to this CC value allow controlling the `mod` CV output
+    -- values sent to this CC value are forwarded to the `mod` CV output
     {
       name = "mod",
       cc = 1,
