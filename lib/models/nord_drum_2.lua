@@ -18,6 +18,8 @@ local SHORTHAND = "nd2"
 
 local controlspec = require "controlspec"
 local formatters = require "formatters"
+local voice = require 'lib/voice'
+
 local midiutil = include('librarian/lib/midiutil')
 local paramutils = include('librarian/lib/paramutils')
 local nbutils = include('librarian/lib/nbutils')
@@ -82,6 +84,8 @@ function NordDrum2.new(id, count, midi_device, ch, nb)
 
   p.default_fmt = nd2_fmt.format_basic
 
+  supports_all_notes_off = true
+
   return p
 end
 
@@ -103,58 +107,6 @@ function NordDrum2:get_nb_params()
   local nb_voice_params = (nb_voices * (#nd2.VOICE_PARAMS + 1))
 
   return nb_global_params + nb_voice_params
-end
-
-
--- ------------------------------------------------------------------------
--- API - nb
-
-function NordDrum2:register_nb_players()
-  nbutils.register_player(self, "global")
-
-  for v=1,nd2.NB_VOICES do
-    local hw = {
-      fqid = self.fqid,
-      display_name = self.display_name,
-      midi_device = self.midi_device,
-      ch = self.voice_channels[v],
-    }
-    nbutils.register_player(hw, "v"..v)
-  end
-end
-
-
--- ------------------------------------------------------------------------
--- implem
-
--- NB: wrapper around `paramutils.set` for multi-voice support
-function NordDrum2:set_voice_param(v, p, val)
-  -- NB: we make a fake version of `self` w/ only the needed props and `ch` set to current voice's
-  local o = {
-    ch = self.voice_channels[v],
-    midi_device = self.midi_device,
-  }
-
-  local pp = nd2.VOICE_PARAM_PROPS[p]
-
-  if not pp then
-    print("missin param "..p)
-    return
-  end
-
-  paramutils.set(o, p, pp, val)
-
-  -- focus to edited channel/voice
-  -- doesn't seem to work...
-  local voice_cc = nd2.GLOBAL_PARAM_PROPS['voice'].cc
-  midiutil.send_cc(self.midi_device, ch, voice_cc, v-1)
-end
-
-function NordDrum2:set_param_all_voices(p, val)
-  for v=1,nd2.NB_VOICES do
-    local p_id = self.fqid..'_v'..v.."_"..p
-    params:set(p_id, val)
-  end
 end
 
 function NordDrum2:register_params()
@@ -196,12 +148,152 @@ function NordDrum2:register_params()
 
 end
 
+
+-- ------------------------------------------------------------------------
+-- implem - norns-assignable params
+
+-- NB: wrapper around `paramutils.set` for multi-voice support
+function NordDrum2:set_voice_param(v, p, val)
+  -- NB: we make a fake version of `self` w/ only the needed props and `ch` set to current voice's
+  local o = {
+    ch = self.voice_channels[v],
+    midi_device = self.midi_device,
+  }
+
+  local pp = nd2.VOICE_PARAM_PROPS[p]
+
+  if not pp then
+    print("missin param "..p)
+    return
+  end
+
+  paramutils.set(o, p, pp, val)
+
+  -- focus to edited channel/voice
+  -- doesn't seem to work...
+  local voice_cc = nd2.GLOBAL_PARAM_PROPS['voice'].cc
+  midiutil.send_cc(self.midi_device, ch, voice_cc, v-1)
+end
+
+function NordDrum2:set_param_all_voices(p, val)
+  for v=1,nd2.NB_VOICES do
+    local p_id = self.fqid..'_v'..v.."_"..p
+    params:set(p_id, val)
+  end
+end
+
+
+-- ------------------------------------------------------------------------
+-- API - midi
+
 function NordDrum2:pgm_change(bank, program)
   local cc14 = nd2.GLOBAL_PARAM_PROPS['bank'].cc14
   local msb_cc = cc14[1]
   local lsb_cc = cc14[2]
   midiutil.send_cc14(self.midi_device, self.ch, msb_cc, lsb_cc, bank-1)
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
+end
+
+
+-- ------------------------------------------------------------------------
+-- API - nb
+
+function NordDrum2:register_nb_players()
+  -- global ch, "hits", trigged w/ `GLOBAL_CH_NOTES` w/ not pitch support
+  -- good for drums
+  nbutils.register_player(self, "global")
+
+  -- individual voice channels w/ pitch support
+  -- good for synth leads
+  for v=1,nd2.NB_VOICES do
+    local hw = {
+      fqid = self.fqid,
+      display_name = self.display_name,
+      midi_device = self.midi_device,
+      ch = self.voice_channels[v],
+      supports_all_notes_off_cc = self.supports_all_notes_off_cc,
+    }
+    print("registering player "..v.." w/ ch="..hw.ch)
+    nbutils.register_player(hw, "v"..v)
+  end
+
+  -- polyphonic voice abstraction
+  NordDrum2.register_poly_player(self)
+end
+
+if note_players == nil then
+  note_players = {}
+end
+
+function NordDrum2.register_poly_player(hw)
+  local player = {
+    voice_count = nd2.NB_VOICES,
+    last_voice = 1,
+    release_fn = {},
+    alloc_modes = { "rotate", "random" },
+    hw = hw,
+  }
+
+  local nb_prfx = "nb_" .. hw.fqid
+  local player_id = nb_prfx .. "_poly"
+  local allow_mode_p = player_id.."_alloc_mode"
+
+  function player:add_params()
+    params:add_group(nb_prfx, nb_prfx, 1)
+    params:add_option(allow_mode_p, "alloc mode", self.alloc_modes, 1)
+    params:hide(nb_prfx)
+  end
+
+  function player:note_on(note, vel)
+    local alloc_mode = self.alloc_modes[params:get(allow_mode_p)]
+    local next_voice, voice_ch
+    if alloc_mode == "rotate" then
+      next_voice = self.last_voice % self.voice_count + 1
+      self.last_voice = next_voice
+      voice_ch = self.hw.voice_channels[next_voice]
+    elseif alloc_mode == "random" then
+      next_voice = math.random(self.voice_count)
+      voice_ch = self.hw.voice_channels[next_voice]
+    end
+    self.release_fn[note] = function()
+      midiutil.send_note_off(self.hw.midi_device, note, 0, voice_ch)
+    end
+    midiutil.send_note_on(self.hw.midi_device, note, vel*127, voice_ch)
+  end
+
+  function player:note_off(note)
+    if self.release_fn[note] then
+      self.release_fn[note]()
+    end
+  end
+
+  function player:describe(note)
+    return {
+      name = player_id,
+      supports_bend = false,
+      supports_slew = false,
+      modulate_description = "unsupported",
+    }
+  end
+
+  function player:stop_all()
+    for _, ch in pairs(self.hw.voice_channels) do
+      midiutil.send_all_notes_off(self.hw.midi_device, ch,
+                                  self.hw.supports_all_notes_off)
+    end
+  end
+
+  function player:active()
+    params:show(nb_prfx)
+    _menu.rebuild_params()
+  end
+
+  function player:inactive()
+    params:hide(nb_prfx)
+    _menu.rebuild_params()
+  end
+
+  note_players[player_id] = player
 end
 
 
