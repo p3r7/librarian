@@ -268,6 +268,18 @@ function midiutil.send_note_off(midi_device, note_num, vel, ch)
   midiutil.send_msg(midi_device, msg)
 end
 
+midiutil.CC_ALL_NOTES_OFF = 123
+
+function midiutil.send_all_notes_off(midi_device, note_num, vel, ch, supports_all_notes_off)
+  if supports_all_notes_off then
+    midiutil.send_cc(midi_device, ch, midiutil.CC_ALL_NOTES_OFF, 1)
+  else
+    for note=1,127 do
+      midiutil.send_note_off(midi_device, note, 0, ch)
+    end
+  end
+end
+
 
 -- ------------------------------------------------------------------------
 -- send - cc

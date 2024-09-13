@@ -7,6 +7,7 @@ local nbutils = {}
 -- deps
 
 local mod = require 'core/mods'
+local midiutil = include('librarian/lib/midiutil')
 
 
 -- ------------------------------------------------------------------------
@@ -38,7 +39,8 @@ function nbutils.register_player(hw, id)
   end
 
   function player:note_on(note, vel)
-    midiutil.send_note_on(self.hw.midi_device, note, vel, self.hw.ch)
+    -- print("note play - "..self.ext..",  vel="..vel)
+    midiutil.send_note_on(self.hw.midi_device, note, vel*127, self.hw.ch)
   end
 
   function player:note_off(note)
@@ -54,6 +56,12 @@ function nbutils.register_player(hw, id)
     }
   end
 
+  function player:stop_all()
+    midiutil.send_all_notes_off(self.hw.midi_device, self.hw.ch,
+                                self.hw.supports_all_notes_off)
+  end
+
+
   function player:active()
     -- params:show(group_id)
     -- _menu.rebuild_params()
@@ -66,6 +74,7 @@ function nbutils.register_player(hw, id)
 
   note_players[player_id] = player
 end
+
 
 -- ------------------------------------------------------------------------
 
