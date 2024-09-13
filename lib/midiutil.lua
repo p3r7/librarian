@@ -248,7 +248,7 @@ function midiutil.send_note_on(midi_device, note_num, vel, ch)
     type = "note_on",
     note = note_num,
     vel = vel,
-    ch = chan,
+    ch = ch,
   }
   midiutil.send_msg(midi_device, msg)
 end
