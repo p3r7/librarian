@@ -35,7 +35,7 @@ local AFTER_PGM_DUMP_WAIT_S = 1/2
 
 
 -- ------------------------------------------------------------------------
--- API - supported object params
+-- API - exposed object params
 
 H3000.PARAMS = {
   'device_id',
