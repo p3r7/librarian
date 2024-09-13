@@ -28,6 +28,7 @@ local hw_list = {}
 
 local conf = nil
 
+librarian_done_init = false
 
 -- -------------------------------------------------------------------------
 -- conf file
@@ -222,6 +223,7 @@ mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
                       init_devices_params()
                     end
 
+                    librarian_done_init = true
 end)
 
 mod.hook.register("script_post_cleanup", MOD_NAME.."-script-post-cleanup",

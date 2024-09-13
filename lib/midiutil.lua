@@ -174,6 +174,12 @@ end
 -- send - generic
 
 function midiutil.send_msg(m, msg)
+  -- NB: prevent sending params when a inmplicit params:bang happens after adding them
+  -- not sure about this behaviour, how to handle scripts that load ther last PSET at init?
+  if not librarian_done_init then
+    return
+  end
+
   local data
   if type(msg) == "table" and (msg.type == "sysex" or msg.type == "other") then
     data = msg.raw
