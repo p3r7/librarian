@@ -4,7 +4,7 @@
 local H3000 = {}
 H3000.__index = H3000
 
-H3000.KIND = "H3000"
+H3000.KIND = "eventide_h3000"
 H3000.SHORTHAND = "h3k"
 H3000.DISPLAY_NAME = "Eventide H3000"
 

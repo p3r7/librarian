@@ -3,7 +3,7 @@
 local AlesisAkira = {}
 AlesisAkira.__index = AlesisAkira
 
-local KIND = "AlesisAkira"
+local KIND = "alesis_akira"
 local SHORTHAND = "akr"
 local DISPLAY_NAME = "Alesis Akira"
 

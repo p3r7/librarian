@@ -9,7 +9,7 @@
 local NordDrum2 = {}
 NordDrum2.__index = NordDrum2
 
-local KIND = "NordDrum2"
+local KIND = "nord_drum_2"
 local SHORTHAND = "nd2"
 local DISPLAY_NAME = "Nord Drum 2"
 
