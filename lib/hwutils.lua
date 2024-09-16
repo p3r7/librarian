@@ -16,11 +16,11 @@ function hwutils.hw_from_static(t, id, count, midi_device, ch, nb)
   local hw = t
 
   if not hw.display_name then
-    hw.display_name = hw.name
+    hw.display_name = hw.kind
   end
 
   if not hw.shorthand then
-    hw.shorthand = hw.name
+    hw.shorthand = hw.kind
   end
 
   if not hw.ch then

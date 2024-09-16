@@ -5,6 +5,7 @@ AlesisAkira.__index = AlesisAkira
 
 local KIND = "AlesisAkira"
 local SHORTHAND = "akr"
+local DISPLAY_NAME = "Alesis Akira"
 
 
 -- ------------------------------------------------------------------------
@@ -38,6 +39,7 @@ function AlesisAkira.new(id, count, midi_device, ch)
 
   p.kind = KIND
   p.shorthand = SHORTHAND
+  p.display_name = DISPLAY_NAME
 
   p.id = id
   p.fqid = p.shorthand.."_"..id

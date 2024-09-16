@@ -4,8 +4,9 @@
 local H3000 = {}
 H3000.__index = H3000
 
-H3000.KIND = "Eventide H3000"
+H3000.KIND = "H3000"
 H3000.SHORTHAND = "h3k"
+H3000.DISPLAY_NAME = "Eventide H3000"
 
 
 -- ------------------------------------------------------------------------
@@ -52,10 +53,10 @@ function H3000.new(id, count, midi_device, ch)
 
   p.kind = H3000.KIND
   p.shorthand = H3000.SHORTHAND
+  p.display_name = H3000.DISPLAY_NAME
 
   p.id = id
   p.fqid = p.shorthand.."_"..id
-  p.display_name = p.kind
   if count > 1 then
     p.display_name = p.display_name.." #"..id
   end

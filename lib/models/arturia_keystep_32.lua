@@ -1,6 +1,6 @@
 return {
   -- main meta-data
-  name = "arturia_keystep_32",
+  kind = "arturia_keystep_32",
   display_name = "Arturia Keystep",
   short_name = "kstp",
 

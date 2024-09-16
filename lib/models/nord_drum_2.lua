@@ -11,6 +11,7 @@ NordDrum2.__index = NordDrum2
 
 local KIND = "NordDrum2"
 local SHORTHAND = "nd2"
+local DISPLAY_NAME = "Nord Drum 2"
 
 
 -- ------------------------------------------------------------------------
@@ -58,10 +59,10 @@ function NordDrum2.new(id, count, midi_device, ch, nb)
 
   p.kind = KIND
   p.shorthand = SHORTHAND
+  p.display_name = DISPLAY_NAME
 
   p.id = id
   p.fqid = p.shorthand.."_"..id
-  p.display_name = p.kind
   if count > 1 then
     p.display_name = p.display_name.." #"..id
   end
