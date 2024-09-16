@@ -84,7 +84,7 @@ function NordDrum2.new(id, count, midi_device, ch, nb)
 
   p.default_fmt = nd2_fmt.format_basic
 
-  supports_all_notes_off = true
+  p.supports_all_notes_off = true
 
   return p
 end
