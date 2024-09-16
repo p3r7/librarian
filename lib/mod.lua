@@ -4,6 +4,7 @@
 local mod = require 'core/mods'
 local MOD_NAME = mod.this_name or "librarian"
 
+local hwutils = include('librarian/lib/hwutils')
 local midiutil = include('librarian/lib/midiutil')
 
 local function tempty(t)
@@ -29,6 +30,7 @@ local hw_list = {}
 local conf = nil
 
 librarian_done_init = false
+
 
 -- -------------------------------------------------------------------------
 -- conf file
@@ -79,15 +81,20 @@ local function init_devices_from_conf(conf)
     end
 
     local HW = model_libs[hw_conf.model]
-    local id_for_model = hw_model_id[i]
+    local id = hw_model_id[i]
     local count_for_model = model_counts[hw_conf.model]
-    local hw = HW.new(id_for_model, count_for_model, midi_device, hw_conf.ch, hw_conf.nb)
+    local hw
+    if HW.new then
+      hw = HW.new(id, count_for_model, midi_device, hw_conf.ch, hw_conf.nb)
+    else
+      hw = hwutils.hw_from_static(HW, id, count_for_model, midi_device, hw_conf.ch)
+    end
     if hw_conf.params ~= nil then
       for k, v in pairs(hw_conf.params) do
         if k == 'midi_device' or tab.contains(HW.PARAMS, k) then
           hw[k] = v
         else
-          print(MOD_NAME .. ' - WARN - ' .. "Cannot set param "..k.."="..v.." for "..hw_conf.model .. '#' .. id_for_model .. ", unsupported param.")
+          print(MOD_NAME .. ' - WARN - ' .. "Cannot set param "..k.."="..v.." for "..hw_conf.model .. '#' .. id .. ", unsupported param.")
         end
       end
     end
