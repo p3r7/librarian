@@ -272,7 +272,7 @@ function NordDrum2.register_poly_player(hw)
 
   function player:describe(note)
     return {
-      name = player_id,
+      name = player_name,
       supports_bend = false,
       supports_slew = false,
       modulate_description = "unsupported",
