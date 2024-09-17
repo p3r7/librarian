@@ -23,15 +23,18 @@ end
 
 function nbutils.register_player(hw, id)
   local player = {
-    ext = "_"..id,
     count = 0,
     -- non-standard props
     hw = hw
   }
 
   local nb_prfx = "nb_" .. hw.fqid
-  local player_id = nb_prfx .. player.ext
-  local player_name = hw.display_name.." "..id
+  local player_id = nb_prfx
+  local player_name = hw.display_name
+  if id then
+    player_id = player_id .. '_'..id
+    player_name = player_name .. ' '..id
+  end
 
   function player:add_params()
     -- params:add_group(player_id, player_name, 0)
@@ -39,7 +42,7 @@ function nbutils.register_player(hw, id)
   end
 
   function player:note_on(note, vel)
-    -- print("note play - "..self.ext..",  vel="..vel)
+    -- print("note play - "..player_name..",  vel="..vel)
     midiutil.send_note_on(self.hw.midi_device, note, vel*127, self.hw.ch)
   end
 
@@ -49,7 +52,7 @@ function nbutils.register_player(hw, id)
 
   function player:describe(note)
     return {
-      name = player_id,
+      name = player_name,
       supports_bend = false,
       supports_slew = false,
       modulate_description = "unsupported",
@@ -72,7 +75,7 @@ function nbutils.register_player(hw, id)
     -- _menu.rebuild_params()
   end
 
-  note_players[player_id] = player
+  note_players[player_name] = player
 end
 
 

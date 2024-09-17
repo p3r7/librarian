@@ -235,8 +235,10 @@ function NordDrum2.register_poly_player(hw)
     hw = hw,
   }
 
+  local id = "poly"
   local nb_prfx = "nb_" .. hw.fqid
-  local player_id = nb_prfx .. "_poly"
+  local player_id = nb_prfx .. "_"..id
+  local player_name = hw.display_name .. " "..id
   local allow_mode_p = player_id.."_alloc_mode"
 
   function player:add_params()
@@ -294,7 +296,7 @@ function NordDrum2.register_poly_player(hw)
     _menu.rebuild_params()
   end
 
-  note_players[player_id] = player
+  note_players[player_name] = player
 end
 
 
