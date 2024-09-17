@@ -78,9 +78,9 @@ function NordDrum2.new(id, count, midi_device, ch, nb)
 
   p.voice_channels = VOICE_CH_LIST
 
-  p.nb = false
-  if nb then
-    p.nb = true
+  p.nb = true
+  if nb ~= nil and not nb then
+    p.nb = false
   end
 
   p.default_fmt = nd2_fmt.format_basic
