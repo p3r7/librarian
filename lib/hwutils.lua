@@ -57,15 +57,36 @@ function hwutils.hw_from_static(t, id, count, midi_device, ch, nb)
   end
 
   function hw:get_nb_params()
-    return #hw.params
+    local count = #self.params
+    if self.pgm_count or self.pgm_list then
+      count = count + 1
+    end
+    return count
   end
 
   function hw:register_params()
-    paramutils.add_params(hw, hw.param_props, hw.param_list)
+    local supports_pgm_change = false
+    if self.pgm_list then
+      params:add_option(self.fqid .. '_pgm', "Program", self.pgm_list)
+      supports_pgm_change = true
+    elseif self.pgm_count then
+      params:add{ type = "number", id = self.fqid .. '_pgm', name = "Program",
+                  min = 1, max = self.pgm_count }
+      supports_pgm_change = true
+    end
+    if supports_pgm_change then
+      params:set_action(self.fqid .. '_pgm',
+                        function(pgm_id)
+                          midiutil.send_pgm_change(self.midi_device, self.ch, pgm)
+                          self.pgm = pgm
+      end)
+    end
+
+    paramutils.add_params(hw, self.param_props, self.param_list)
   end
 
   function hw:register_nb_players()
-    nbutils.register_player(self, "global")
+    nbutils.register_player(self)
   end
 
   return hw
