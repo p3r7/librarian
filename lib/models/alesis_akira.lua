@@ -91,7 +91,7 @@ end
 
 function AlesisAkira:pgm_change(pgm)
   midiutil.send_pgm_change(self.midi_device, self.ch, pgm)
-  hw.pgm = pgm
+  self.pgm = pgm
 end
 
 
