@@ -1,3 +1,6 @@
+-- librarian/models/korg opsix
+-- contributed by: dewb
+
 return {
   -- main meta-data
   kind = "korg_opsix",
@@ -7,17 +10,13 @@ return {
   -- notes / nb
   plays_notes = true,
   supports_all_notes_off = true,
+  
+  -- program change
+  requires_bank_select = true,
+  bank_size = 100,
 
   -- params
   params = {
-    {
-      name = "bank_select_msb",
-      cc = 0
-    },
-    {
-      name = "bank_select_lsb",
-      cc = 32
-    },
     {
       name = "mod",
       cc = 1,
@@ -496,6 +495,7 @@ return {
     }
   },
   
+  -- factory program names
   pgm_list = {
     "Dat Electric Piano",
     "Original FM EP",
@@ -817,35 +817,35 @@ return {
     "Epic 30s Riser",
     "INFINITY",
     "Hot Revs",
-    "[TMP] Detune Sine Template",
-    "[TMP] Detune Saw Template",
-    "[TMP] Unison Saw Template",
-    "[TMP] Reso Noise Template",
-    "[TMP] Chord Hit Template",
-    "[TMP] Velocity FM Template",
-    "[TMP] 2OP FM Template",
-    "[TMP] Harmonics Mod Template",
-    "[TMP] Modulator FM Template",
-    "[TMP] Pulse Width Template",
-    "[TMP] Ring Mod Template",
-    "[TMP] FM Sync Template",
-    "[TMP] Wavefolder Sync Template",
-    "[TMP] Wavefolder Template",
-    "[TMP] Filter FM Template",
-    "[TMP] Waveshape Template",
-    "[TMP] Delay Mod Template",
-    "[TMP] Comb Flanger Template",
-    "[TMP] Comb LFO Template",
-    "[TMP] Phaser Noise Template",
-    "[TMP] EG ADSR Template",
-    "[TMP] Pitch EG Perc Template",
-    "[TMP] Random Pan Template",
-    "[TMP] OP Filter Mono Template",
-    "[TMP] OP Mode Check Template",
-    "[TMP] Quadra LFOs Template",
-    "[TMP] Effect LFO Template",
-    "[TMP] User Filter Ping Template",
-    "[TMP] C4 Key Split Template",
-    "[TMP] SEQ Key Trig Template"
+    "[TMP] Detune Sine",
+    "[TMP] Detune Saw",
+    "[TMP] Unison Saw",
+    "[TMP] Reso Noise",
+    "[TMP] Chord Hit",
+    "[TMP] Velocity FM",
+    "[TMP] 2OP FM",
+    "[TMP] Harmonics Mod",
+    "[TMP] Modulator FM",
+    "[TMP] Pulse Width",
+    "[TMP] Ring Mod",
+    "[TMP] FM Sync",
+    "[TMP] Wavefolder Sync",
+    "[TMP] Wavefolder",
+    "[TMP] Filter FM",
+    "[TMP] Waveshape",
+    "[TMP] Delay Mod",
+    "[TMP] Comb Flanger",
+    "[TMP] Comb LFO",
+    "[TMP] Phaser Noise",
+    "[TMP] EG ADSR",
+    "[TMP] Pitch EG Perc",
+    "[TMP] Random Pan",
+    "[TMP] OP Filter Mono",
+    "[TMP] OP Mode Check",
+    "[TMP] Quadra LFOs",
+    "[TMP] Effect LFO",
+    "[TMP] User Filter Ping",
+    "[TMP] C4 Key Split",
+    "[TMP] SEQ Key Trig"
   }
 }

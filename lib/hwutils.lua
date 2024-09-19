@@ -76,8 +76,12 @@ function hwutils.hw_from_static(t, id, count, midi_device, ch, nb)
     end
     if supports_pgm_change then
       params:set_action(self.fqid .. '_pgm',
-                        function(pgm_id)
-                          midiutil.send_pgm_change(self.midi_device, self.ch, pgm)
+                        function(pgm)
+                          local bank_size = self.bank_size or 127
+                          if self.requires_bank_select then
+                            midiutil.send_cc14(self.midi_device, self.ch, 0, 32, (pgm - 1) // bank_size)
+                          end
+                          midiutil.send_pgm_change(self.midi_device, self.ch, (pgm - 1) % bank_size)
                           self.pgm = pgm
       end)
     end
