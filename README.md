@@ -74,7 +74,7 @@ WARN: incomplete implem
 | `device_id` | `int` | :x:       | `0`                     | unique H3000 midi id, set to a different value if you customized it |
 
 
-### Meng Qi Wingie2
+#### Meng Qi Wingie2
 
 WARN: very wip, untested
 
