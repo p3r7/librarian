@@ -15,6 +15,11 @@ local midiutil = include('librarian/lib/midiutil')
 -- see `lib/models/nord_drum_2.lua` for an example
 function paramutils.set(o, p, pp, val)
 
+  local ch = o.ch
+  if pp.ch then
+    ch = pp.ch
+  end
+
   if pp.outfn then
     val = pp.outfn(val)
   end
