@@ -171,29 +171,37 @@ function Wingie2:register_params()
   local voices = {
     {
       id = "lr",
-      desc = "left + right",
+      desc = "Left + Right",
       ch = self.ch,
     }
     {
       id = "l",
-      desc = "left",
+      desc = "Left",
       ch = self.left_ch,
     },
     {
       id = "r",
-      desc = "right",
+      desc = "Right",
       ch = self.right_ch,
     },
   }
   for _, v in pairs(voices) do
-    local o = {
-      fqid = self.fqid..'_'..v.id,
-      ch = v.ch,
-      midi_device = self.midi_device,
-    }
-    paramutils.add_params(o, Wingie2.VOICE_PARAM_PROPS, Wingie2.VOICE_PARAMS)
+    local hw = hwutils.cloned(self)
+    hw.fqid = self.fqid..'_'..v.id
+    hw.ch = v.ch
+    paramutils.add_params(hw, Wingie2.VOICE_PARAM_PROPS, Wingie2.VOICE_PARAMS)
     if v.id == 'l' or v.id == 'r' then
-      -- TODO: add `cave` tuning params
+      local ch = (v.id == 'l') and 14 or 15
+      for i=1,CAVE_COUNT do
+        local p_id = 'cave_'..i
+        local p_props = {}
+        p_props[p_id] = {
+          disp = v.desc.." Cave "..i,
+          ch = ch,
+          cc14 = { 23 + (i-1), 55 + (i-1)},
+        }
+        paramutils.add_param(hw, p_props, 'cave_'..i)
+      end
     end
   end
 
