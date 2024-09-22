@@ -85,7 +85,8 @@ function NordDrum2.new(id, count, midi_device, ch, nb)
 
   p.default_fmt = nd2_fmt.format_basic
 
-  p.supports_all_notes_off = true
+  p.supports_all_notes_off = false
+  p.supports_notes_off = false
 
   return p
 end
@@ -212,7 +213,8 @@ function NordDrum2:register_nb_players()
       display_name = self.display_name,
       midi_device = self.midi_device,
       ch = self.voice_channels[v],
-      supports_all_notes_off_cc = self.supports_all_notes_off_cc,
+      supports_all_notes_off = self.supports_all_notes_off,
+      supports_notes_off = self.supports_notes_off,
     }
     print("registering player "..v.." w/ ch="..hw.ch)
     nbutils.register_player(hw, "v"..v)
@@ -259,6 +261,9 @@ function NordDrum2.register_poly_player(hw)
       voice_ch = self.hw.voice_channels[next_voice]
     end
     self.release_fn[note] = function()
+      if self.hw.supports_notes_off == false then
+        return
+      end
       midiutil.send_note_off(self.hw.midi_device, note, 0, voice_ch)
     end
     midiutil.send_note_on(self.hw.midi_device, note, vel*127, voice_ch)
@@ -280,9 +285,11 @@ function NordDrum2.register_poly_player(hw)
   end
 
   function player:stop_all()
+    if self.hw.supports_notes_off == false then
+      return
+    end
     for _, ch in pairs(self.hw.voice_channels) do
-      midiutil.send_all_notes_off(self.hw.midi_device, ch,
-                                  self.hw.supports_all_notes_off)
+      midiutil.send_all_notes_off(self.hw.midi_device, ch)
     end
   end
 

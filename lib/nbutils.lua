@@ -47,6 +47,9 @@ function nbutils.register_player(hw, id)
   end
 
   function player:note_off(note)
+    if self.hw.supports_notes_off == false then
+      return
+    end
     midiutil.send_note_off(self.hw.midi_device, note, 0, self.hw.ch)
   end
 
@@ -60,6 +63,11 @@ function nbutils.register_player(hw, id)
   end
 
   function player:stop_all()
+    -- REVIEW: devices that don't support `note_off` generally don't support any way to set all notes to off
+    -- but there might be a weird one out there...
+    if self.hw.supports_notes_off == false then
+      return
+    end
     midiutil.send_all_notes_off(self.hw.midi_device, self.hw.ch,
                                 self.hw.supports_all_notes_off)
   end
