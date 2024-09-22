@@ -111,10 +111,10 @@ function paramutils.add_param(o, paramprops, p, action)
 
 end
 
-function paramutils.add_params(o, paramprops, p_list,
+function paramutils.add_params(o, p_props_map, p_list,
                                action)
   for _, p in pairs(p_list) do
-    paramutils.add_param(o, paramprops, p,
+    paramutils.add_param(o, p_props_map, p,
                          action)
   end
 end
