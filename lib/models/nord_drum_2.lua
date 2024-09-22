@@ -125,14 +125,11 @@ function NordDrum2:register_params()
 
     params:add_separator(prefix, "Voice "..v)
 
-    local o = {
-      fqid = self.fqid..'_v'..v,
-      ch = self.voice_channels[v],
-      midi_device = self.midi_device,
-      default_fmt = self.default_fmt,
-    }
+    local hw = hwutils.cloned(self)
+    hw.fqid = self.fqid..'_v'..v
+    hw.ch = self.voice_channels[v]
 
-    paramutils.add_params(o, nd2.VOICE_PARAM_PROPS, nd2.VOICE_PARAMS,
+    paramutils.add_params(hw, nd2.VOICE_PARAM_PROPS, nd2.VOICE_PARAMS,
                           function(p, val)
                             self:set_voice_param(v, p, val)
     end)
