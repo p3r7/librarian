@@ -111,12 +111,6 @@ the individual voice channel approach works better w/ melodic sequencers (`awake
 | `global_channel_notes` | `int[]` | :x:       | `{60, 62, 64, 65, 67, 69}` | midi notes to trig individual voices using the global midi channel           |
 
 
-## adding new models
+## adding support to new models
 
-just create a new lua class under [`lib/models/`](./lib/models/).
-
-it should implement the following APIs:
-- `<CLASS>.PARAMS`: list of additional params that could/should be set in conf
-- `<CLASS>.new(id, midi_device, ch)`: object constructor
-- `<CLASS>:get_nb_params()`: should return the nb of parameters that'd get created by `<CLASS>:register_params()`
-- `<CLASS>:register_params()`: register norns params
+see [`DEV_GUIDE.md`](./DEV_GUIDE.md)
