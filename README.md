@@ -45,6 +45,29 @@ return {
 
 ## supported devices
 
+#### Arturia Keystep (`arturia_keystep_32`)
+
+[implem](./lib/models/arturia_keystep_32.lua), [manual (PDF)](http://downloads.arturia.com/products/keystep/manual/KeyStep_Manual_1_0_0_EN.pdf)
+
+the most basic Keystep in the range.
+
+
+#### Alesis Akira (`alesis_akira`)
+
+[implem](./lib/models/alesis_akira.lua), [manual (PDF)](https://archive.org/details/manualzz-id-1311965)
+
+a powerful multi effect. rack version of the Ineko, related to the ModFx series.
+
+WARN: very wip, untested
+
+
+### Meng Qi Wingie2
+
+[implem](./lib/models/meng_qi_wingie2.lua), [manual (PDF)](https://static1.squarespace.com/static/56122b94e4b01402b90cce28/t/64e5efea36c20464d084b93e/1692790765339/Wingie2+Manual+v3.1+-+EN.pdf)
+
+WARN: very wip, untested
+
+
 #### Nord Drum 2 (`nord_drum_2`)
 
 ![](./rsc/img/device/nord_drum_2_5x.png)
