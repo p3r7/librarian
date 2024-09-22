@@ -69,6 +69,13 @@ WARN: incomplete implem
 
 [implem](./lib/models/eventide_h3000.lua), [manual (PDF)](https://cdn.eventideaudio.com/uploads/2021/09/H3000-Service.pdf)
 
+maybe the most ubiquitous studio multi effect.
+
+partial support for bilateral editing (on algos that are supported).
+
+sadly, extracting the current `pgm_id` from PGM DUMP isn't reliable past a given index. so, in order to work properly, this profile needs to be fed a file [`~/dust/data/librarian/h3000_pgm_list.lua`](./data/h3000_pgm_list.lua) (dumped using [`h3000_pgm_scanner.lua`](https://github.com/p3r7/h3000/blob/main/h3000_pgm_scanner.lua))
+
+
 | param       | type  | mandatory | default (factory) value | comment                                                             |
 |-------------|-------|-----------|-------------------------|---------------------------------------------------------------------|
 | `device_id` | `int` | :x:       | `0`                     | unique H3000 midi id, set to a different value if you customized it |
