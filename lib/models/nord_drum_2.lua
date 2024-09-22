@@ -209,7 +209,7 @@ function NordDrum2:register_nb_players()
   -- good for synth leads
   for v=1,nd2.NB_VOICES do
     local hw = hwutils.cloned(self)
-    hw = self.voice_channels[v]
+    hw.ch = self.voice_channels[v]
     print("registering player "..v.." w/ ch="..hw.ch)
     nbutils.register_player(hw, "v"..v)
   end
