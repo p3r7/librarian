@@ -21,18 +21,14 @@ the simple format is just a lua table.
 it should have the following fields:
 
 | field                    | type       | mandatory          | default value   | comment                                 |
-|--------------------------|------------|--------------------|-----------------|-----------------------------------------|
 | `kind`                   | `string`   | :heavy_check_mark: |                 | what gets referenced in conf w/ `model` |
 | `display_name`           | `string`   | :x:                | value of `kind` | how it appears in `params`              |
 | `short_name`             | `string`   | :x:                | value of `kind` | shorthand (for small screens)           |
-|--------------------------|------------|--------------------|-----------------|-----------------------------------------|
 | `plays_notes`            | `bool`     | :x:                | `false`         |                                         |
 | `supports_notes_off`     | `bool`     | :x:                | `true`          |                                         |
 | `supports_all_notes_off` | `bool`     | :x:                | `true`          |                                         |
-|--------------------------|------------|--------------------|-----------------|-----------------------------------------|
 | `midi_device`            | `string`   | :x:                | `nil`           | default name of midi device (if USB)    |
 | `ch`                     | `int`      | :x:                | `1`             | default midi channel                    |
-|--------------------------|------------|--------------------|-----------------|-----------------------------------------|
 | `pgm_list`               | `[]string` | :x:                |                 |                                         |
 | `params`                 | `[]params` | :x:                |                 |                                         |
 | `default_fmt`            | `function` | :x:                |                 |                                         |
