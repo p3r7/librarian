@@ -250,6 +250,7 @@ end
 -- send - note on / off
 
 function midiutil.send_note_on(midi_device, note_num, vel, ch)
+  vel = util.clamp(util.round(vel), 0, 127)
   local msg = {
     type = "note_on",
     note = note_num,
@@ -260,9 +261,11 @@ function midiutil.send_note_on(midi_device, note_num, vel, ch)
 end
 
 function midiutil.send_note_off(midi_device, note_num, vel, ch)
+  vel = util.clamp(util.round(vel), 0, 127)
   local msg = {
     type = "note_off",
     note = note_num,
+    vel = vel,
     ch = chan,
   }
   midiutil.send_msg(midi_device, msg)
@@ -270,7 +273,7 @@ end
 
 midiutil.CC_ALL_NOTES_OFF = 123
 
-function midiutil.send_all_notes_off(midi_device, note_num, vel, ch, supports_all_notes_off)
+function midiutil.send_all_notes_off(midi_device, note_num, _vel, ch, supports_all_notes_off)
   if supports_all_notes_off then
     midiutil.send_cc(midi_device, ch, midiutil.CC_ALL_NOTES_OFF, 1)
   else

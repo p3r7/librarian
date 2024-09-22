@@ -129,6 +129,17 @@ local function fmt_image(param)
   end
 end
 
+-- function fmt_image(v)
+--   local WIDTH = 19
+--   if v < 0 then
+--     local offset = util.round(util.linlin(0, 99, WIDTH/2, 0, -v))
+--     return string.rep(" ", offset) .. "R" .. string.rep(" ", WIDTH - offset * 2) .. "L" .. string.rep(" ", offset)
+--   else
+--     local offset = util.round(util.linlin(0, 99, WIDTH/2, 0, v))
+--     return string.rep(" ", offset) .. "L" .. string.rep(" ", WIDTH - offset * 2) .. "R" .. string.rep(" ", offset)
+--   end
+-- end
+
 local function fmt_multi_shift_pitch(param)
   -- bellow 1.0
   -- 0.125 - 0.944  ->  12784 - 16284
