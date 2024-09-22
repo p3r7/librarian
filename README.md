@@ -54,18 +54,31 @@ the most basic Keystep in the range.
 
 #### Alesis Akira (`alesis_akira`)
 
+WARN: very wip, untested
+
 [implem](./lib/models/alesis_akira.lua), [manual (PDF)](https://archive.org/details/manualzz-id-1311965)
 
 a powerful multi effect. rack version of the Ineko, related to the ModFx series.
 
-WARN: very wip, untested
+
+#### Eventide H3000 (`eventide_h3000`)
+
+WARN: incomplete implem
+
+![](./rsc/img/device/h3000_5x.png)
+
+[implem](./lib/models/eventide_h3000.lua), [manual (PDF)](https://cdn.eventideaudio.com/uploads/2021/09/H3000-Service.pdf)
+
+| param       | type  | mandatory | default (factory) value | comment                                                             |
+|-------------|-------|-----------|-------------------------|---------------------------------------------------------------------|
+| `device_id` | `int` | :x:       | `0`                     | unique H3000 midi id, set to a different value if you customized it |
 
 
 ### Meng Qi Wingie2
 
-[implem](./lib/models/meng_qi_wingie2.lua), [manual (PDF)](https://static1.squarespace.com/static/56122b94e4b01402b90cce28/t/64e5efea36c20464d084b93e/1692790765339/Wingie2+Manual+v3.1+-+EN.pdf)
-
 WARN: very wip, untested
+
+[implem](./lib/models/meng_qi_wingie2.lua), [manual (PDF)](https://static1.squarespace.com/static/56122b94e4b01402b90cce28/t/64e5efea36c20464d084b93e/1692790765339/Wingie2+Manual+v3.1+-+EN.pdf)
 
 
 #### Nord Drum 2 (`nord_drum_2`)
@@ -87,17 +100,6 @@ the individual voice channel approach works better w/ melodic sequencers (`awake
 |------------------------|---------|-----------|----------------------------|------------------------------------------------------------------------------|
 | `voice_channels`       | `int[]` | :x:       | `{1, 2, 3, 4, 5, 6}`       | additional midi channels that can be used to play & access individual voices |
 | `global_channel_notes` | `int[]` | :x:       | `{60, 62, 64, 65, 67, 69}` | midi notes to trig individual voices using the global midi channel           |
-
-
-#### Eventide H3000 (`eventide_h3000`)
-
-![](./rsc/img/device/h3000_5x.png)
-
-[implem](./lib/models/eventide_h3000.lua), [manual (PDF)](https://cdn.eventideaudio.com/uploads/2021/09/H3000-Service.pdf)
-
-| param       | type  | mandatory | default (factory) value | comment                                                             |
-|-------------|-------|-----------|-------------------------|---------------------------------------------------------------------|
-| `device_id` | `int` | :x:       | `0`                     | unique H3000 midi id, set to a different value if you customized it |
 
 
 ## adding new models
