@@ -70,7 +70,27 @@ function H3000.new(id, count, midi_device, ch)
 
   p.debug = false
 
+  p.inhibit_midi = false
+
   -- current pgm
+  p.pgm_list = {}
+  p.pgm_map = {}
+  p.algo_pgm_map = {}
+  p.name_pgm_map = {}
+  local pgm_list = h3000.read_pgm_list()
+  if pgm_list then
+    p.pgm_list = pgm_list
+    for i, pgm in ipairs(p.pgm_list) do
+      local id, name, algo = table.unpack(pgm)
+      p.pgm_map[id] = {name, algo, i}
+      p.name_pgm_map[name] = id
+      if p.algo_pgm_map[algo] == nil then
+        p.algo_pgm_map[algo] = {}
+      end
+      table.insert(p.algo_pgm_map[algo], id)
+    end
+  end
+
   p.current_bank = nil
   p.current_pgm = nil
   p.current_pgm_name = nil
@@ -126,15 +146,35 @@ end
 -- API - norns-assignable params
 
 function H3000:get_nb_params()
+  local nb_global_params = 1 -- pgm
+
   local nb_algo_params = 0
   for _, algo_props in pairs(h3000.ALGOS) do
     nb_algo_params = nb_algo_params + #algo_props.params
   end
 
-  return nb_algo_params
+  return nb_global_params + nb_algo_params
 end
 
 function H3000:register_params()
+  local pgm_list_opts = {}
+  local pgm_p_id = self.fqid .. '_' .. 'pgm'
+  for _, pgm in ipairs(self.pgm_list) do
+    local id, name = table.unpack(pgm)
+    table.insert(pgm_list_opts, id .. " - " .. strim(name))
+  end
+  params:add_option(pgm_p_id, "PGM", pgm_list_opts)
+  params:set_action(pgm_p_id,
+                    function(i)
+                      if self.inhibit_midi then
+                        return
+                      end
+                      local pgm_id, _ = table.unpack(self.pgm_list[i])
+                      self:pgm_change(pgm_id)
+                      -- screen_dirty = true
+  end)
+
+
 
   for algo_id, props in pairs(h3000.ALGOS) do
     local algo_name = props.name
@@ -384,6 +424,13 @@ function H3000:update_state_from_pgm_change(bank_pgm)
     print("   WARN: can't handle as current bank unknown")
   end
 
+  if self.current_pgm then
+    local _, _, p_id = table.unpack(self.pgm_map[self.current_pgm])
+    if p_id then
+      self:update_current_pgm_param(p_id)
+    end
+  end
+
   if self.pgm_change_rcv then
     self.pgm_change_rcv(pgm)
   end
@@ -397,6 +444,23 @@ function H3000:dump_pgm()
   h3000.dump_pgm_current(self.midi_device, self.device_id)
 end
 
+function H3000:update_current_pgm_param(pgm_id)
+  if self.debug then
+    -- print("   UPDATE PGM PARAM: "..pgm_id)
+  end
+
+  local pgm = self.pgm_map[pgm_id]
+  if pgm == nil then
+    print("   Unknown PGM #"..pgm_id)
+    return
+  end
+  local _, _, i = table.unpack(pgm)
+
+  self.inhibit_midi = true
+  params:set(self.fqid.."_pgm", i)
+  self.inhibit_midi = false
+end
+
 function H3000:update_state_from_pgm_dump(raw_payload)
   if self.debug then
     print("<- PGM DUMP (" .. (#raw_payload - 2) .. "B)")
@@ -404,15 +468,34 @@ function H3000:update_state_from_pgm_dump(raw_payload)
 
   local pgm = h3000.parse_pgm_dump(raw_payload)
 
-  self.current_pgm = pgm.id
+  -- NB: past a certain pgm_id, we can't just get it from the pgm_dump payload
+  -- (or at least i haven't found where part of the pgm_id is encoded...)
+  -- so instead we rely on a previosly dumped map of all programs and use the name as a key
+  -- i'm not too happy about that...
   self.current_pgm_name = pgm.name
-  local prev_algo = self.current_algo
+  -- self.current_pgm = pgm.id
+  self.current_pgm = self.name_pgm_map[self.current_pgm_name]
+  if self.current_pgm then
+    if self.debug then
+      print("   "..self.current_pgm_name .. " -> ".. self.current_pgm)
+    end
+    self:update_current_pgm_param(self.current_pgm)
+  end
   self.current_algo = pgm.algo
 
-  if prev_algo ~= self.current_algo then
-    self:hide_params_for_algo(prev_algo)
+  if self.debug then
+    print("   ALGO: "..self.current_algo)
+  end
+
+  if self.prev_algo == nil or prev_algo ~= self.current_algo then
+    self:hide_params_for_algo(self.prev_algo)
     self:show_params_for_algo(self.current_algo)
     _menu.rebuild_params()
+
+    if self.prev_algo then
+      print("    - hiding: "..self.prev_algo)
+    end
+    print("    - showing: "..self.current_algo)
   end
 
   if self.pgm_dump_rcv then
