@@ -21,6 +21,7 @@ the simple format is just a lua table.
 it should have the following fields:
 
 | field                    | type       | mandatory          | default value   | comment                                 |
+|--------------------------|------------|--------------------|-----------------|-----------------------------------------|
 | `kind`                   | `string`   | :heavy_check_mark: |                 | what gets referenced in conf w/ `model` |
 | `display_name`           | `string`   | :x:                | value of `kind` | how it appears in `params`              |
 | `short_name`             | `string`   | :x:                | value of `kind` | shorthand (for small screens)           |
@@ -32,6 +33,7 @@ it should have the following fields:
 | `pgm_list`               | `[]string` | :x:                |                 |                                         |
 | `params`                 | `[]params` | :x:                |                 |                                         |
 | `default_fmt`            | `function` | :x:                |                 |                                         |
+
 
 all in all, your profile could look something like:
 
