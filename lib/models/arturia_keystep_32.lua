@@ -8,6 +8,8 @@ return {
   plays_notes = true,
   supports_all_notes_off = true,
 
+  midi_device = "Arturia KeyStep 32",
+
   -- params
   params = {
     -- mod touch strip

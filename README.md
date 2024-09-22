@@ -51,6 +51,8 @@ return {
 
 the most basic Keystep in the range.
 
+if connected to norns over USB, you don't hve to configure the `device` as `"Arturia KeyStep 32"` is assumed by default. otherwise (using midi ports) you'd have to precise the name of the midi device it is connected to (or when in doubt use `"ALL"`).
+
 
 #### Alesis Akira (`alesis_akira`)
 
