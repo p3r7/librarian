@@ -208,14 +208,8 @@ function NordDrum2:register_nb_players()
   -- individual voice channels w/ pitch support
   -- good for synth leads
   for v=1,nd2.NB_VOICES do
-    local hw = {
-      fqid = self.fqid,
-      display_name = self.display_name,
-      midi_device = self.midi_device,
-      ch = self.voice_channels[v],
-      supports_all_notes_off = self.supports_all_notes_off,
-      supports_notes_off = self.supports_notes_off,
-    }
+    local hw = hwutils.cloned(self)
+    hw = self.voice_channels[v]
     print("registering player "..v.." w/ ch="..hw.ch)
     nbutils.register_player(hw, "v"..v)
   end

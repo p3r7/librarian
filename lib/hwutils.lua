@@ -12,6 +12,7 @@ local nbutils = include('librarian/lib/nbutils')
 
 
 -- ------------------------------------------------------------------------
+-- constructors
 
 function hwutils.hw_from_static(t, id, count, midi_device, ch, nb)
   -- reveiw: copy table?
@@ -90,6 +91,22 @@ function hwutils.hw_from_static(t, id, count, midi_device, ch, nb)
   end
 
   return hw
+end
+
+
+-- ------------------------------------------------------------------------
+-- helpers
+
+function hwutils.cloned(hw)
+  return {
+    id = hw.id,
+    fqid = hw.fqid,
+    display_name = hw.display_name,
+    midi_device = hw.midi_device,
+    ch = hw.ch,
+    supports_all_notes_off = hw.supports_all_notes_off,
+    supports_notes_off = hw.supports_notes_off,
+  }
 end
 
 
