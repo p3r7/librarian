@@ -129,7 +129,7 @@ function NordDrum2:register_params()
       fqid = self.fqid..'_v'..v,
       ch = self.voice_channels[v],
       midi_device = self.midi_device,
-      default_fmt = nd2_fmt.default_fmt,
+      default_fmt = self.default_fmt,
     }
 
     paramutils.add_params(o, nd2.VOICE_PARAM_PROPS, nd2.VOICE_PARAMS,
