@@ -109,6 +109,20 @@ function paramutils.add_param(o, paramprops, p, action)
     return
   end
 
+  -- default to non-editable std number param
+  local min = 0
+  local max = 127
+  if pp.min then
+    min = pp.min
+  end
+  if pp.max then
+    max = pp.max
+  end
+  params:add{ type = "number", id = p_id, name = p_name,
+              min = min, max = max, default = pp.default,
+              formatter = fmt }
+  -- no action as not editable
+
 end
 
 function paramutils.add_params(o, p_props_map, p_list,

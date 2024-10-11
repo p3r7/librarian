@@ -21,6 +21,7 @@ local controlspec = require "controlspec"
 local formatters = require "formatters"
 local voice = require 'lib/voice'
 
+local hwutils = include('librarian/lib/hwutils')
 local midiutil = include('librarian/lib/midiutil')
 local paramutils = include('librarian/lib/paramutils')
 local nbutils = include('librarian/lib/nbutils')
@@ -54,8 +55,10 @@ local GLOBAL_CH_NOTES = {60, 62, 64, 65, 67, 69}
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function NordDrum2.new(id, count, midi_device, ch, nb)
+function NordDrum2.new(MOD_STATE, id, count, midi_device, ch, nb)
   local p = setmetatable({}, NordDrum2)
+
+  p.MOD_STATE = MOD_STATE
 
   p.kind = KIND
   p.shorthand = SHORTHAND

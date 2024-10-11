@@ -26,8 +26,29 @@ local IGNORED_MIDI_DEVS = {
 -- state
 
 local hw_list = {}
+local MOD_STATE = {
+  hw_list = hw_list,
+  conf = nil,
 
-local conf = nil
+  clock_pgm_change_t = 0,
+  clock_pgm_dump_t = 0,
+}
+
+-- NB: `pgm_dump_clock` re-fetches current pgm params, not necessarilly through a midi pgm_dump, it can use other APIs if available
+local pgm_change_clock = nil
+local pgm_dump_clock = nil
+
+-- time to wait for the user to stop scrolling pgms before triggering pgm change
+local TRIG_PGM_CHANGE_S = 1/3
+-- time to wait for pgm dump after having sent a pgm_change
+local TRIG_PGM_DUMP_S = 1/2
+-- time to wait for pgm change/dump after having sent a dump
+local AFTER_PGM_DUMP_WAIT_S = 1/10
+
+-- at which rate to check for the need to send pgm changes
+local FREQ_PGM_CHANGE = 1/40
+-- local FREQ_PGM_DUMP = 1/40
+local FREQ_PGM_DUMP = 1
 
 librarian_done_init = false
 
@@ -75,19 +96,17 @@ local function init_devices_from_conf(conf)
       goto NEXT_HW_INIT
     end
 
-    local midi_device = hw_conf.device
-    if midi_device == nil then
-      midi_device = midiutil.MIDI_DEV_ALL
-    end
+    local midi_device = hw_conf.device or midiutil.MIDI_DEV_ALL
 
     local HW = model_libs[hw_conf.model]
     local id = hw_model_id[i]
     local count_for_model = model_counts[hw_conf.model]
     local hw
     if HW.new then
-      hw = HW.new(id, count_for_model, midi_device, hw_conf.ch, hw_conf.nb)
+      hw = HW.new(MOD_STATE, id, count_for_model,
+                  midi_device, hw_conf.ch, hw_conf.nb)
     else
-      hw = hwutils.hw_from_static(HW, id, count_for_model, midi_device, hw_conf.ch)
+      hw = hwutils.hw_from_static(HW, MOD_STATE, id, count_for_model, midi_device, hw_conf.ch)
     end
     if hw_conf.params ~= nil then
       for k, v in pairs(hw_conf.params) do
@@ -181,9 +200,9 @@ mod.hook.register("script_pre_init", MOD_NAME.."-script-pre-init",
                     -- local script_init = init
                     -- init = function ()
 
-                    conf = load_conf_file()
-                    if conf then
-                      init_devices_from_conf(conf)
+                    MOD_STATE.conf = load_conf_file()
+                    if MOD_STATE.conf then
+                      init_devices_from_conf(MOD_STATE.conf)
 
                       for _, hw in ipairs(hw_list) do
                         if hw.nb and hw.register_nb_players then
@@ -216,6 +235,11 @@ mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
                                                             "cc", "program_change"}, d.type)
                           if not has_channel or d.ch == hw.ch then
                             hw:midi_event(dev, data)
+
+                            if d.type == "program_change" then
+                              hw.needs_pgm_dump = true
+                              hw.needs_pgm_dump_t = MOD_STATE.clock_pgm_dump_t
+                            end
                           end
                         end
                       end
@@ -234,7 +258,81 @@ mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
                       end
                     end
 
-                    if conf then
+                    pgm_change_clock = clock.run(function()
+                        while true do
+                          clock.sleep(FREQ_PGM_CHANGE)
+                          MOD_STATE.clock_pgm_change_t = MOD_STATE.clock_pgm_change_t + FREQ_PGM_CHANGE
+
+                          for _, hw in ipairs(hw_list) do
+
+                            local after_pgm_dump_wait_s = hw.after_pgm_dump_wait_s or AFTER_PGM_DUMP_WAIT_S
+
+                            if hw.pgm_change == nil or hw.asked_pgm == nil then
+                              goto NEXT_HW_PGM_CHANGE
+                            end
+
+                            -- just received need for a new pgm change
+                            -- -> mark last pgm change request time as now & skip
+                            if hw.asked_pgm and hw.asked_pgm_t == nil then
+                              hw.asked_pgm_t = MOD_STATE.clock_pgm_change_t
+                              hw.needs_pgm_dump = false
+                              hw.needs_pgm_dump_t = nil
+                              goto NEXT_HW_PGM_CHANGE
+                            end
+
+                            local needs_pgm_change = (MOD_STATE.clock_pgm_change_t - hw.asked_pgm_t) > TRIG_PGM_CHANGE_S
+                            local recent_pgm_dump = hw.last_dump_rcv_t ~= nil and (MOD_STATE.clock_pgm_change_t - hw.last_dump_rcv_t) < after_pgm_dump_wait_s
+
+                            if needs_pgm_change
+                              and not recent_pgm_dump then
+                              print("-> PGM CHANGE - "..hw.fqid.." - "..hw.asked_pgm)
+
+                              hw:pgm_change(hw.asked_pgm)
+                            end
+
+                            ::NEXT_HW_PGM_CHANGE::
+                          end
+                        end
+                    end)
+
+                    pgm_dump_clock = clock.run(function()
+                        while true do
+                          clock.sleep(FREQ_PGM_DUMP)
+                          MOD_STATE.clock_pgm_dump_t = MOD_STATE.clock_pgm_dump_t + FREQ_PGM_DUMP
+
+                          for _, hw in ipairs(hw_list) do
+
+                            local after_pgm_dump_wait_s = hw.after_pgm_dump_wait_s or AFTER_PGM_DUMP_WAIT_S
+
+                            if hw.dump_pgm == nil or not hw.needs_pgm_dump then
+                              goto NEXT_HW_PGM_DUMP
+                            end
+
+                            -- just received need for a new pgm change
+                            -- -> mark last pgm change request time as now & skip
+                            if hw.needs_pgm_dump and hw.needs_pgm_dump_t == nil then
+                              hw.needs_pgm_dump_t = MOD_STATE.clock_pgm_dump_t
+                              goto NEXT_HW_PGM_DUMP
+                            end
+
+                            local needs_pgm_dump = (MOD_STATE.clock_pgm_dump_t - hw.needs_pgm_dump_t) > TRIG_PGM_DUMP_S
+                            local recent_pgm_dump = hw.last_dump_rcv_t ~= nil and (MOD_STATE.clock_pgm_change_t - hw.last_dump_rcv_t) < after_pgm_dump_wait_s
+
+                            if needs_pgm_dump
+                              and not recent_pgm_dump then
+                              print("-> PGM DUMP - "..hw.fqid)
+
+                              hw:dump_pgm()
+                              hw.needs_pgm_dump = false
+                              hw.needs_pgm_dump_t = nil
+                            end
+
+                            ::NEXT_HW_PGM_DUMP::
+                          end
+                        end
+                    end)
+
+                    if MOD_STATE.conf then
                       params:add_separator("librarian", "librarian")
                       init_devices_params()
                     end
@@ -244,6 +342,14 @@ end)
 
 mod.hook.register("script_post_cleanup", MOD_NAME.."-script-post-cleanup",
                   function()
+
+                    if pgm_change_clock then
+                      clock.cancel(pgm_change_clock)
+                    end
+                    if pgm_dump_clock then
+                      clock.cancel(pgm_dump_clock)
+                    end
+
                     for _, hw in ipairs(hw_list) do
                       if hw.cleanup then
                         hw:cleanup()

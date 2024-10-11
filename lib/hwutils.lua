@@ -14,9 +14,11 @@ local nbutils = include('librarian/lib/nbutils')
 -- ------------------------------------------------------------------------
 -- constructors
 
-function hwutils.hw_from_static(t, id, count, midi_device, ch, nb)
+function hwutils.hw_from_static(t, MOD_STATE, id, count, midi_device, ch, nb)
   -- reveiw: copy table?
   local hw = t
+
+  hw.MOD_STATE = MOD_STATE
 
   if not hw.display_name then
     hw.display_name = hw.kind
@@ -102,10 +104,14 @@ function hwutils.cloned(hw)
     id = hw.id,
     fqid = hw.fqid,
     display_name = hw.display_name,
+
     midi_device = hw.midi_device,
     ch = hw.ch,
+
     supports_all_notes_off = hw.supports_all_notes_off,
     supports_notes_off = hw.supports_notes_off,
+
+    default_fmt = hw.default_fmt,
   }
 end
 

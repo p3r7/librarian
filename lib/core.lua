@@ -18,6 +18,8 @@ end
 -- ------------------------------------------------------------------------
 -- tables
 
+-- akin to js' `Array.prototype.slice`, except 1-indexed
+-- unlike the js version, `last` is included in the output
 function tab_sliced(tbl, first, last, step)
   local sliced = {}
 
@@ -69,4 +71,12 @@ end
 -- like `table.unpack` but supports maps
 function tunpack(t)
   return table.unpack(tvals(t))
+end
+
+function tconcat(t1, t2)
+  local t = table.copy(t1)
+  for _, v in ipairs(t2) do
+    table.insert(t, v)
+  end
+  return t
 end

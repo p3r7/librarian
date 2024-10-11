@@ -26,11 +26,12 @@ include('librarian/lib/core')
 local FREQ_MIDI_SMOOTH_CLK = 1/20
 local MIDI_SMOOTH_THRESHOLD = 1/5
 
-local FREQ_PGM_REFRESH = 1/40
--- time to wait for the user to stop scrolling pgms before triggering pgm change
-local TRIG_PGM_CHANGE_S = 1/3
--- time to wait for pgm dump after having sent a pgm_change
-local TRIG_PGM_DUMP_S = 1/2
+-- local FREQ_PGM_REFRESH = 1/40
+-- -- time to wait for the user to stop scrolling pgms before triggering pgm change
+-- local TRIG_PGM_CHANGE_S = 1/3
+-- -- time to wait for pgm dump after having sent a pgm_change
+-- local TRIG_PGM_DUMP_S = 1/2
+
 -- time to wait for pgm change/dump after having sent a dump
 local AFTER_PGM_DUMP_WAIT_S = 1/2
 
@@ -48,8 +49,10 @@ local DEVICE_ID = 0
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function H3000.new(id, count, midi_device, ch)
+function H3000.new(MOD_STATE, id, count, midi_device, ch)
   local p = setmetatable({}, H3000)
+
+  p.MOD_STATE = MOD_STATE
 
   p.kind = H3000.KIND
   p.shorthand = H3000.SHORTHAND
@@ -112,17 +115,19 @@ function H3000.new(id, count, midi_device, ch)
   end)
 
   -- midi congestion handling - pgm
-  p.clock_pgm_t = 0
+  p.after_pgm_dump_wait_s = AFTER_PGM_DUMP_WAIT_S
+  p.sent_pgm_t = nil -- REVIEW: keep that one?
+  -- p.clock_pgm_t = 0
   p.last_sent_pgm_change = false
   p.sent_pgm_new = false
   p.is_waiting_for_dump_after_pgm_change = false
   p.is_waiting_for_dump = false
-  p.clock_pgm = clock.run(function()
-      while true do
-        clock.sleep(FREQ_PGM_REFRESH)
-        p:pgm_change_clock(FREQ_PGM_REFRESH)
-      end
-  end)
+  -- p.clock_pgm = clock.run(function()
+  --     while true do
+  --       clock.sleep(FREQ_PGM_REFRESH)
+  --       p:pgm_change_clock(FREQ_PGM_REFRESH)
+  --     end
+  -- end)
   p.last_dump_rcv_t = 0
 
   -- midi input
@@ -170,8 +175,7 @@ function H3000:register_params()
                         return
                       end
                       local pgm_id, _ = table.unpack(self.pgm_list[i])
-                      self:pgm_change(pgm_id)
-                      -- screen_dirty = true
+                      self:pgm_change_async(pgm_id)
   end)
 
 
@@ -295,7 +299,7 @@ function H3000:midi_event(dev, data)
       table.insert(self.sysex_payload[dev.name], b)
       if b == 0xf7 then
         self.is_sysex_dump_on[dev.name] = false
-        handle_sysex(self.sysex_payload[dev.name])
+        self:handle_sysex(self.sysex_payload[dev.name])
       end
     end
   elseif d.type == 'program_change' then
@@ -384,15 +388,15 @@ function H3000:clear_pgm_state()
   end
 end
 
-function H3000:pgm_change(pgm_id)
-  self.asked_pgm_t = self.clock_pgm_t
+function H3000:pgm_change_async(pgm_id)
+  self.asked_pgm_t = self.MOD_STATE.clock_pgm_change_t
   self.asked_pgm = pgm_id
   self:clear_pgm_state()
 end
 
 -- NB: setting request_pgm_dump to true will trigger a pgm dump request
 -- but this causes issues in some scenarios where the H3000 will crap if sent too soon
-function H3000:pgm_change_sync(pgm_id, request_pgm_dump)
+function H3000:pgm_change(pgm_id, request_pgm_dump)
   self.last_sent_pgm_change = pgm_id
   if self.debug then
     print("-> PGM CHANGE - " .. pgm_id)
@@ -401,7 +405,7 @@ function H3000:pgm_change_sync(pgm_id, request_pgm_dump)
   h3000.pgm_change(self.midi_device, self.ch, self.device_id, pgm_id, request_pgm_dump)
 
   -- self.sent_pgm_new = true
-  self.sent_pgm_t = self.clock_pgm_t
+  self.sent_pgm_t = self.MOD_STATE.clock_pgm_change_t
   self.is_waiting_for_dump_after_pgm_change = true
 end
 
@@ -418,7 +422,7 @@ function H3000:update_state_from_pgm_change(bank_pgm)
   if self.current_bank then
     self.current_pgm = self.current_bank * 100 + bank_pgm
     self:clear_pgm_state()
-    self.sent_pgm_t = self.clock_pgm_t
+    self.sent_pgm_t = self.MOD_STATE.clock_pgm_change_t
     self.is_waiting_for_dump_after_pgm_change = true
   else
     print("   WARN: can't handle as current bank unknown")
@@ -432,7 +436,7 @@ function H3000:update_state_from_pgm_change(bank_pgm)
   end
 
   if self.pgm_change_rcv then
-    self.pgm_change_rcv(pgm)
+    self.pgm_change_rcv(self.current_pgm)
   end
 end
 
@@ -465,6 +469,8 @@ function H3000:update_state_from_pgm_dump(raw_payload)
   if self.debug then
     print("<- PGM DUMP (" .. (#raw_payload - 2) .. "B)")
   end
+
+  self.last_dump_rcv_t = self.MOD_STATE.clock_pgm_change_t
 
   local pgm = h3000.parse_pgm_dump(raw_payload)
 
@@ -506,37 +512,36 @@ function H3000:update_state_from_pgm_dump(raw_payload)
     print("    " .. self.current_pgm .. " " .. self.current_pgm_name .. " (algo=" .. self.current_algo .. ")")
   end
 
-  self.last_dump_rcv_t = self.clock_pgm_t
   self.is_waiting_for_dump = false
   self.is_waiting_for_dump_after_pgm_change = false
 end
 
-function H3000:pgm_change_clock(tick_d)
-  self.clock_pgm_t = self.clock_pgm_t + tick_d
+-- function H3000:pgm_change_clock(tick_d)
+--   self.clock_pgm_t = self.clock_pgm_t + tick_d
 
-  local needs_pgm_change = self.asked_pgm_t ~= nil
-    and (self.clock_pgm_t - self.asked_pgm_t) > TRIG_PGM_CHANGE_S
+--   local needs_pgm_change = self.asked_pgm_t ~= nil
+--     and (self.clock_pgm_t - self.asked_pgm_t) > TRIG_PGM_CHANGE_S
 
-  local needs_pgm_dump = self.sent_pgm_t ~= nil
-    and (self.clock_pgm_t - self.sent_pgm_t) > TRIG_PGM_DUMP_S
+--   local needs_pgm_dump = self.sent_pgm_t ~= nil
+--     and (self.clock_pgm_t - self.sent_pgm_t) > TRIG_PGM_DUMP_S
 
-  local recent_pgm_dump = (self.clock_pgm_t - self.last_dump_rcv_t) < AFTER_PGM_DUMP_WAIT_S
+--   local recent_pgm_dump = (self.clock_pgm_t - self.last_dump_rcv_t) < AFTER_PGM_DUMP_WAIT_S
 
-  -- NB: also temporizes pgm_change / pgm_dump if just did a pgm_dump
-  -- edge-case where H3000 craps and resets to either 100 of <bank>00
-  if needs_pgm_change
-    and not recent_pgm_dump then
-    self:pgm_change_sync(self.asked_pgm)
-    self.asked_pgm_t = nil
-  end
+--   -- NB: also temporizes pgm_change / pgm_dump if just did a pgm_dump
+--   -- edge-case where H3000 craps and resets to either 100 of <bank>00
+--   if needs_pgm_change
+--     and not recent_pgm_dump then
+--     self:pgm_change(self.asked_pgm)
+--     self.asked_pgm_t = nil
+--   end
 
-  if needs_pgm_dump
-    and not recent_pgm_dump then
-    self:dump_pgm()
-    self.sent_pgm_t = nil
-  end
+--   if needs_pgm_dump
+--     and not recent_pgm_dump then
+--     self:dump_pgm()
+--     self.sent_pgm_t = nil
+--   end
 
-end
+-- end
 
 
 -- ------------------------------------------------------------------------

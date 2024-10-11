@@ -34,8 +34,10 @@ local DEFAULT_CC_Z = 93
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function AlesisAkira.new(id, count, midi_device, ch)
+function AlesisAkira.new(MOD_STATE, id, count, midi_device, ch)
   local p = setmetatable({}, AlesisAkira)
+
+  p.MOD_STATE = MOD_STATE
 
   p.kind = KIND
   p.shorthand = SHORTHAND

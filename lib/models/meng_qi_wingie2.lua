@@ -116,8 +116,10 @@ Wingie2.PARAMS = {
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function Wingie2.new(id, count, midi_device, ch, nb)
+function Wingie2.new(MOD_STATE, id, count, midi_device, ch, nb)
   local p = setmetatable({}, NordDrum2)
+
+  p.MOD_STATE = MOD_STATE
 
   p.kind = KIND
   p.shorthand = SHORTHAND

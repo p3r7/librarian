@@ -44,7 +44,6 @@ function midiutil.byte_array_diff(a, a2)
   return diffs
 end
 
-
 function midiutil.print_byte_array(a, fmt_fn, per_line)
   if fmt_fn == nil then fmt_fn = DEFAULT_BYTE_FORMATER end
   if per_line == nil then per_line = 1 end
@@ -179,6 +178,13 @@ function midiutil.send_msg(m, msg)
   if not librarian_done_init then
     return
   end
+
+  -- print("SEND -> "..m)
+  -- if msg.type == "sysex" then
+  --   midiutil.print_byte_array_midiox(msg.raw)
+  -- else
+  --   tab.print(msg)
+  -- end
 
   local data
   if type(msg) == "table" and (msg.type == "sysex" or msg.type == "other") then

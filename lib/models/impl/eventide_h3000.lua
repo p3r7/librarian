@@ -7,6 +7,7 @@ local h3000 = {}
 -- deps
 
 local midiutil = include("librarian/lib/midiutil")
+include("librarian/lib/core") -- for `tab_sliced`
 
 
 -- ------------------------------------------------------------------------
@@ -14,6 +15,16 @@ local midiutil = include("librarian/lib/midiutil")
 
 local NB_SOFT_FNS = 4
 
+
+-- ------------------------------------------------------------------------
+-- pgm list
+
+function h3000.read_pgm_list()
+  local conf_path = _path.data .. 'librarian' .. '/' .. "h3000_pgm_list.lua"
+  if util.file_exists(conf_path) then
+    return dofile(conf_path)
+  end
+end
 
 -- ------------------------------------------------------------------------
 -- consts - param values
@@ -979,7 +990,6 @@ function h3000.sysex_dump_presets(m, dev_id)
   payload = midiutil.sysex_valorized(payload, {[h3000.MTCH_DEV_ID]=dev_id})
   midiutil.send_sysex(m, payload)
 end
-
 
 
 -- ------------------------------------------------------------------------
