@@ -64,6 +64,16 @@ function paramutils.add_param(o, paramprops, p, action)
     fmt = o.default_fmt
   end
 
+  if p.cc and o.cc_param_map then
+    o.cc_param_map[p.cc] = p_id
+  elseif p.cc14 and o.cc14_param_map then
+    o.cc14_param_map[p.cc] = p_id
+  elseif p.nrpn and o.nrpn_param_map then
+    o.nrpn_param_map[p.cc] = p_id
+  elseif p.rpn and o.rpn_param_map then
+    o.rpn_param_map[p.cc] = p_id
+  end
+
   -- REVIEW: maybe use controlspecs for everything?
 
   if pp.opts then

@@ -112,6 +112,14 @@ function hwutils.cloned(hw)
     supports_notes_off = hw.supports_notes_off,
 
     default_fmt = hw.default_fmt,
+
+    -- REVIEW: maybe it's saner to have sub-hw w/ separate maps
+    -- indeed, case of a device that listens to several channel, w/ channel same CC numbers...
+    --> but we only have 1 global `HW:midi_event` fn, so it's up to the device to then route according to the received channel
+    cc_param_map = hw.cc_param_map,
+    cc14_param_map = hw.cc14_param_map,
+    rpn_param_map = hw.rpn_param_map,
+    nrpn_param_map = hw.nrpn_param_map,
   }
 end
 
