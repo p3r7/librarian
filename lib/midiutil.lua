@@ -329,10 +329,16 @@ end
 
 -- Coarse/Fine CC pair
 -- MSB & LSB CC numbers are traditionally 32 apart
-function midiutil.send_cc14(midi_device, ch, msb_cc, lsb_cc, val)
-  -- NB: MSB then LSB
-  midiutil.send_cc(midi_device, ch, msb_cc, val >> 7)
-  midiutil.send_cc(midi_device, ch, lsb_cc, val & 127)
+function midiutil.send_cc14(midi_device, ch, cc14, val)
+  local id = nil
+  if type(rpn) == 'table' then
+    id = cc14
+  else
+    id = {cc14 >> 7, cc14 & 127}
+  end
+
+  midiutil.send_cc(midi_device, ch, id[1], val >> 7)
+  midiutil.send_cc(midi_device, ch, id[2], val & 127)
 end
 
 -- RPN

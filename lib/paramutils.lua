@@ -30,9 +30,7 @@ function paramutils.set(o, p, pp, val)
   end
 
   if pp.cc14 then
-    local msb_cc = pp.cc14[1]
-    local lsb_cc = pp.cc14[2]
-    midiutil.send_cc14(o.midi_device, o.ch, msb_cc, lsb_cc, val)
+    midiutil.send_cc14(o.midi_device, o.ch, pp.cc14, val)
     return
   end
 

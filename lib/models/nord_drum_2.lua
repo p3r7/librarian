@@ -190,9 +190,7 @@ end
 
 function NordDrum2:pgm_change(bank, program)
   local cc14 = nd2.GLOBAL_PARAM_PROPS['bank'].cc14
-  local msb_cc = cc14[1]
-  local lsb_cc = cc14[2]
-  midiutil.send_cc14(self.midi_device, self.ch, msb_cc, lsb_cc, bank-1)
+  midiutil.send_cc14(self.midi_device, self.ch, cc14, bank-1)
   midiutil.send_pgm_change(self.midi_device, self.ch, program-1)
 end
 
