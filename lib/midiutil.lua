@@ -346,9 +346,16 @@ end
 function midiutil.send_rpn(midi_device, ch, rpn, val, do_null)
   if do_null == nil then do_null = true end
 
+  local id = nil
+  if type(rpn) == 'table' then
+    id = rpn
+  else
+    id = {rpn >> 7, rpn & 127}
+  end
+
   -- - address
-  midiutil.send_cc(midi_device, ch, 101, rpn >> 7)
-  midiutil.send_cc(midi_device, ch, 100, rpn & 127)
+  midiutil.send_cc(midi_device, ch, 101, id[1])
+  midiutil.send_cc(midi_device, ch, 100, id[2])
 
   -- - value
   midiutil.send_cc(midi_device, ch, 6,  val >> 7)
@@ -368,9 +375,16 @@ end
 
 -- NRPN
 function midiutil.send_nrpn(midi_device, ch, nrpn, val)
+  local id = nil
+  if type(nrpn) == 'table' then
+    id = nrpn
+  else
+    id = {nrpn >> 7, nrpn & 127}
+  end
+
   -- - address
-  midiutil.send_cc(midi_device, ch, 99, nrpn >> 7)
-  midiutil.send_cc(midi_device, ch, 98, nrpn & 127)
+  midiutil.send_cc(midi_device, ch, 99, id[1])
+  midiutil.send_cc(midi_device, ch, 98, id[2])
 
   -- - value
   midiutil.send_cc(midi_device, ch, 6,  val >> 7)
