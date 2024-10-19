@@ -128,6 +128,7 @@ local function init_devices_params()
     params:add_group(hw.display_name, hw:get_nb_params())
     hw:register_params()
   end
+  _menu.rebuild_params()
 end
 
 
