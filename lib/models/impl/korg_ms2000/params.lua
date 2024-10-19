@@ -72,13 +72,28 @@ end
 
 
 -- ------------------------------------------------------------------------
--- params - special
+-- params - select
 
 -- special params not saved in dump but used to switch edit modes
 
-ms2000_params.SELECT_PARAMS = {
-  timbre = {
+ms2000_params.EDIT_MODE_PARAMS = {
+  'edited_timbre',
+}
+
+ms2000_params.EDIT_MODE_PARAM_PROPS = {
+  edited_timbre = {
     cc = 95,
+    save = false,
+    -- hide = true,
+    opts = { '1', '2' },
+    infn = function(v)
+      return (v > 0) and 2 or 1
+    end,
+    outfn = function(v)
+      return (v-1) * 127
+    end,
+    -- action = function(hw, p, pp, val)
+    -- end
   },
 }
 
@@ -127,6 +142,22 @@ ms2000_params.GLOBAL_PARAM_PROPS = {
       local m = VOICE_MODES[v]
       return tab.invert(VOICE_MODES_MAP)[m]
     end,
+    action = function(hw, p, pp, val)
+      if VOICE_MODES[val] == "synth (bi-timbral)" then
+        print(hw.display_name .. " - showing Timbre #2")
+        for _, p_id in ipairs(hw.timbre_params[2]) do
+          params:show(p_id)
+        end
+        -- params:show(hw.fqid..'_edited_timbre')
+      else
+        print(hw.display_name .. " - hiding Timbre #2")
+        for _, p_id in ipairs(hw.timbre_params[2]) do
+          params:hide(p_id)
+        end
+        -- params:show(hw.fqid..'_edited_timbre')
+      end
+      _menu.rebuild_params()
+    end
   },
 
   -- arpeggio

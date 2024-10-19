@@ -58,20 +58,24 @@ function MS2000.new(MOD_STATE, id, count, midi_device, ch)
 
   p.debug = false
 
-  p.inhibit_midi = false
+  p.no_midi = nil
 
   p.current_pgm_id = nil
   p.current_pgm_name = nil
-  p.current_pgm_voice_mode = nil
-  p.current_timbre = nil
-
-  p.sysex_payload = {}
-  p.is_sysex_dump_on = {}
 
   p.last_dump_rcv_t = nil
 
   p.cc_param_map = {}
   p.nrpn_param_map = {}
+  p.timbre_params = {}
+
+  p.child_hw = {}
+  for t=1,2 do
+    local hw = hwutils.cloned(p)
+    hw.fqid = p.fqid..'_t'..t
+    hw.debug = true -- FIXME: tmp
+    p.child_hw[t] = hw
+  end
 
   return p
 end
@@ -81,9 +85,9 @@ end
 -- API - norns-assignable params
 
 function MS2000:get_nb_params()
-  local nb_global_params = #ms2000_params.GLOBAL_PARAMS + 1 -- + pgm select
+  local nb_global_params = #ms2000_params.EDIT_MODE_PARAMS + #ms2000_params.GLOBAL_PARAMS + 1 -- +1 for pgm select
 
-  local nb_timbre_params = #ms2000_params.TIMBRE_PARAMS * 2 -- bi-timbral
+  local nb_timbre_params = (#ms2000_params.TIMBRE_PARAMS + 1) * 2 -- bi-timbral, +1 for separators
 
   return nb_global_params + nb_timbre_params
 end
@@ -115,7 +119,7 @@ function MS2000:register_params()
   params:add_option(pgm_p_id, "PGM", pgm_list_opts)
   params:set_action(pgm_p_id,
                     function(v)
-                      if self.inhibit_midi then
+                      if self.no_midi then
                         return
                       end
                       -- NB: we don't directly send a PGM change but wait for the param to stop changing before firing
@@ -123,11 +127,26 @@ function MS2000:register_params()
                       self:pgm_change_async(v)
   end)
 
+  paramutils.add_params(self, ms2000_params.EDIT_MODE_PARAM_PROPS, ms2000_params.EDIT_MODE_PARAMS)
+
   paramutils.add_params(self, ms2000_params.GLOBAL_PARAM_PROPS, ms2000_params.GLOBAL_PARAMS)
   for t=1,2 do
-    local hw = hwutils.cloned(self)
-    hw.fqid = self.fqid..'_t'..t
-    paramutils.add_params(hw, ms2000_params.TIMBRE_PARAM_PROPS, ms2000_params.TIMBRE_PARAMS)
+    local hw = self.child_hw[t]
+    params:add_separator(hw.fqid, "Timbre "..t)
+
+    self.timbre_params[t] = paramutils.add_params(hw, ms2000_params.TIMBRE_PARAM_PROPS, ms2000_params.TIMBRE_PARAMS,
+                                                  function(hw, p, pp, val)
+                                                    if hw.no_midi then
+                                                      return
+                                                    end
+
+                                                    local current_timbre = params:get(self.fqid..'_'..'edited_timbre')
+                                                    if current_timbre ~= t then
+                                                      params:set(self.fqid..'_'..'edited_timbre', t)
+                                                    end
+                                                    paramutils.set(hw, p, pp, val)
+    end)
+    table.insert(self.timbre_params[t], hw.fqid) -- separator
   end
 end
 
@@ -161,34 +180,24 @@ end
 -- ------------------------------------------------------------------------
 -- impl - midi rcv
 
+function MS2000:inhibit_midi()
+  self.no_midi = true
+  for _, hw in ipairs(self.child_hw) do
+    hw.no_midi = true
+  end
+end
+
+function MS2000:enable_midi()
+  self.no_midi = nil
+  for _, hw in ipairs(self.child_hw) do
+    hw.no_midi = nil
+  end
+end
+
 function MS2000:midi_event(dev, data)
   local d = midi.to_msg(data)
 
-  if self.is_sysex_dump_on[dev.name] then
-    -- print("-> sysex (cont.)")
-    -- midiutil.print_byte_array_midiox(data)
-
-    for _, b in pairs(data) do
-      table.insert(self.sysex_payload[dev.name], b)
-      if b == 0xf7 then
-        self.is_sysex_dump_on[dev.name] = false
-        self:handle_sysex(self.sysex_payload[dev.name])
-      end
-    end
-  elseif d.type == 'sysex' then
-    -- print("-> sysex")
-    -- midiutil.print_byte_array_midiox(data)
-
-    self.is_sysex_dump_on[dev.name] = true
-    self.sysex_payload[dev.name] = {}
-    for _, b in pairs(d.raw) do
-      table.insert(self.sysex_payload[dev.name], b)
-      if b == 0xf7 then
-        self.is_sysex_dump_on[dev.name] = false
-        self:handle_sysex(self.sysex_payload[dev.name])
-      end
-    end
-  elseif d.type == 'program_change' then
+  if d.type == 'program_change' then
     if self.debug then
       print("<- PGM CHANGE - " .. self.fqid .. " - " .. d.val)
     end
@@ -203,40 +212,44 @@ function MS2000:midi_event(dev, data)
       local p = self.cc_param_map[d.cc]
       local p_id = nil
       local pp = nil
-      if ms2000_params.GLOBAL_PARAM_PROPS[p] then
+      if ms2000_params.EDIT_MODE_PARAM_PROPS[p] then
+        pp = ms2000_params.EDIT_MODE_PARAM_PROPS[p]
+        p_id = self.fqid..'_'..p
+      elseif ms2000_params.GLOBAL_PARAM_PROPS[p] then
         pp = ms2000_params.GLOBAL_PARAM_PROPS[p]
         p_id = self.fqid..'_'..p
       elseif ms2000_params.TIMBRE_PARAM_PROPS[p] then
         pp = ms2000_params.TIMBRE_PARAM_PROPS[p]
         -- TODO: depends on what current timbre is!
-        if current_pgm_voice_mode == 'synth' then
+        if params:string(self.fqid..'_voice_mode') == 'synth' then
           p_id = self.fqid..'_t1_'..p
-        elseif current_pgm_voice_mode == 'synth (bi-timbral)' then
-          if self.current_timbre then
-            if self.current_timbre < 3 then
-              p_id = self.fqid..'_t'..self.current_timbre..'_'..p
-            else
-              print("   warn - can't set param "..p.." as current patch is multi-timbral and BOTH timbres selected, not supported yet")
-              return
-            end
+        elseif params:string(self.fqid..'_voice_mode') == 'synth (bi-timbral)' then
+          local current_timbre = params:get(self.fqid..'_'..'edited_timbre')
+          if current_timbre < 3 then
+            p_id = self.fqid..'_t'..current_timbre..'_'..p
           else
-            print("   warn - can't set param "..p.." as current patch is multi-timbral and we don't know which is active")
+            print("   warn - can't set param "..p.." as current patch is multi-timbral and BOTH timbres selected, not supported yet")
             return
           end
+        else
+          print("   warn - can't set param "..p.." as current patch is vocoder, not supported yet")
         end
       end
 
-      local v = d.val
-      if pp.infn then
-        v = pp.infn(v)
-      end
+      if p_id and pp then
 
-      if p_id then
+        local v = d.val
+        if pp.infn then
+          v = pp.infn(v)
+        end
+
         if self.debug then
           print("   " .. p_id .. "=" .. v)
         end
         params:set(p_id, v)
       end
+    else
+      print("   unknown CC")
     end
 
   end
@@ -262,9 +275,11 @@ end
 function MS2000:update_state_from_pgm_change(pgm_id)
   self.current_pgm_id = pgm_id + 1
 
-  self.inhibit_midi = true
+  self:inhibit_midi()
   params:set(self.fqid .. '_' .. 'pgm', self.current_pgm_id)
-  self.inhibit_midi = false
+  -- NB: when switching pgm, the hw resets its active timbre to the 1rst
+  params:set(self.fqid .. '_' .. 'edited_timbre', 1)
+  self:enable_midi()
 
   -- self:clear_pgm_state()
   -- self.sent_pgm_t = self.clock_pgm_t
@@ -280,6 +295,8 @@ function MS2000:update_state_from_pgm_dump(raw_payload)
 
   local pgm = ms2000_sysex.parse_pgm_dump(raw_payload)
   print(inspect(pgm))
+
+  self:inhibit_midi()
 
   self.current_pgm_name = pgm.name
 
@@ -297,10 +314,10 @@ function MS2000:update_state_from_pgm_dump(raw_payload)
     for k, v in pairs(pgm.timbre1) do
       local pprops = ms2000_params.TIMBRE_PARAM_PROPS[k]
       if pprops then
-      params:set(self.fqid..'_t1_'..k, v)
-    else
-      print("WARN - unexpected timbre param from pgm dump: "..k)
-    end
+        params:set(self.fqid..'_t1_'..k, v)
+      else
+        print("WARN - unexpected timbre param from pgm dump: "..k)
+      end
     end
   end
   if pgm.timbre2 then
@@ -313,6 +330,8 @@ function MS2000:update_state_from_pgm_dump(raw_payload)
       end
     end
   end
+
+  self:enable_midi()
 
   if self.pgm_dump_rcv then
     self.pgm_dump_rcv(self.current_pgm_id)

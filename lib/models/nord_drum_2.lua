@@ -124,27 +124,28 @@ function NordDrum2:register_params()
   end)
 
   for v=1,nd2.NB_VOICES do
-    local prefix = self.fqid..'_v'..v
-
-    params:add_separator(prefix, "Voice "..v)
-
     local hw = hwutils.cloned(self)
     hw.fqid = self.fqid..'_v'..v
     hw.ch = self.voice_channels[v]
 
+    params:add_separator(hw.fqid, "Voice "..v)
+
     paramutils.add_params(hw, nd2.VOICE_PARAM_PROPS, nd2.VOICE_PARAMS,
-                          function(p, val)
+                          function(hw, p, _pp, val)
                             self:set_voice_param(v, p, val)
-    end)
+                          end
+    )
   end
 
   if DO_EXPOSE_EDIT_ALL_VOICE_PARAMS then
     params:add_separator(self.fqid..'_v_all', "All Voices ")
 
     for _, p in pairs(nd2.VOICE_PARAMS) do
-      paramutils.add_param(self, nd2.VOICE_PARAM_PROPS, p, function(p, val)
+      paramutils.add_param(self, nd2.VOICE_PARAM_PROPS, p,
+                           function(_hw, p, _pp, val)
                              self:set_param_all_voices(p, val)
-      end)
+                           end
+      )
     end
   end
 

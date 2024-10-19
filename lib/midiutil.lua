@@ -172,6 +172,12 @@ end
 -- ------------------------------------------------------------------------
 -- send - generic
 
+function midiutil.msg_has_ch(msg)
+  return tab.contains( {"note_on", "note_off",  "pitchbend",
+                        "key_pressure", "channel_pressure",
+                        "cc", "program_change"}, msg.type)
+end
+
 function midiutil.send_msg(m, msg)
   -- NB: prevent sending params when a inmplicit params:bang happens after adding them
   -- not sure about this behaviour, how to handle scripts that load ther last PSET at init?

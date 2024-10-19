@@ -32,6 +32,9 @@ local MOD_STATE = {
 
   clock_pgm_change_t = 0,
   clock_pgm_dump_t = 0,
+
+  dev_sysex_dump_on = {},
+  dev_sysex_payload = {},
 }
 
 -- NB: `pgm_dump_clock` re-fetches current pgm params, not necessarilly through a midi pgm_dump, it can use other APIs if available
@@ -223,18 +226,52 @@ end)
 mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
                   function()
 
+                    -- NB: we do sysex reassembly at this level but let the interpretation of other messages to each hw implem
+                    -- this is esp. the case for cc14/rpn/nrpn reassembly
                     local function midi_event(dev, data, script_event_fn)
-                      -- local midiutil = include('librarian/lib/midiutil')
-
                       local d = midi.to_msg(data)
 
+                      -- TODO: use device port (or device name + device port) in order to support multiple devices w/ same name
+                      local dev_id = dev.name
+
+                      local has_done_sysex = false
+
+                      if MOD_STATE.dev_sysex_dump_on[dev_id] then
+                        -- print("-> sysex (cont.)")
+                        -- midiutil.print_byte_array_midiox(data)
+
+                        for _, b in pairs(data) do
+                          table.insert(MOD_STATE.dev_sysex_payload[dev_id], b)
+                          if b == 0xf7 then
+                            has_done_sysex = true
+                            MOD_STATE.dev_sysex_dump_on[dev_id] = false
+                          end
+                        end
+                      elseif d.type == 'sysex' then
+                        -- print("-> sysex")
+                        -- midiutil.print_byte_array_midiox(data)
+                        MOD_STATE.dev_sysex_dump_on[dev_id] = true
+                        MOD_STATE.dev_sysex_payload[dev_id] = {}
+                        for _, b in pairs(d.raw) do
+                          table.insert(MOD_STATE.dev_sysex_payload[dev_id], b)
+                          if b == 0xf7 then
+                            has_done_sysex = true
+                            MOD_STATE.dev_sysex_dump_on[dev_id] = false
+                          end
+                        end
+                      end
+
                       for _, hw in ipairs(hw_list) do
-                        if hw.midi_event and (hw.midi_device == dev.name
-                                              or (hw.midi_device == midiutil.MIDI_DEV_ALL and not tab.contains(IGNORED_MIDI_DEVS, dev.name))) then
-                          local has_channel = tab.contains({"note_on", "note_off",  "pitchbend",
-                                                            "key_pressure", "channel_pressure",
-                                                            "cc", "program_change"}, d.type)
-                          if not has_channel or d.ch == hw.ch then
+                        if (hw.midi_device == dev.name
+                            or (hw.midi_device == midiutil.MIDI_DEV_ALL and not tab.contains(IGNORED_MIDI_DEVS, dev.name))) then
+
+                          -- NB: sysex is omni, send to all hw
+                          if has_done_sysex and hw.handle_sysex then
+                            hw:handle_sysex(MOD_STATE.dev_sysex_payload[dev_id])
+                            return
+                          end
+
+                          if hw.midi_event and (not midiutil.msg_has_ch(d) or d.ch == hw.ch) then
                             hw:midi_event(dev, data)
 
                             if d.type == "program_change" then

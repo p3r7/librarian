@@ -7,6 +7,8 @@ local paramutils = {}
 
 local midiutil = include('librarian/lib/midiutil')
 
+include('librarian/lib/core')
+
 
 -- ------------------------------------------------------------------------
 
@@ -40,7 +42,8 @@ function paramutils.set(o, p, pp, val)
   end
 end
 
-function paramutils.add_param(o, paramprops, p, action)
+function paramutils.add_param(o, paramprops, p,
+                              action)
   local p_id = o.fqid..'_'..p
 
   local pp = paramprops[p]
@@ -50,8 +53,10 @@ function paramutils.add_param(o, paramprops, p, action)
   end
 
   if not action then
-    action = function(p, val)
-      paramutils.set(o, p, pp, val)
+    if pp.action then
+      action = pp.action
+    else
+      action = paramutils.set
     end
   end
 
@@ -62,24 +67,39 @@ function paramutils.add_param(o, paramprops, p, action)
     fmt = o.default_fmt
   end
 
-  if p.cc and o.cc_param_map then
-    o.cc_param_map[p.cc] = p_id
-  elseif p.cc14 and o.cc14_param_map then
-    o.cc14_param_map[p.cc] = p_id
-  elseif p.nrpn and o.nrpn_param_map then
-    o.nrpn_param_map[p.cc] = p_id
-  elseif p.rpn and o.rpn_param_map then
-    o.rpn_param_map[p.cc] = p_id
+  if pp.cc and o.cc_param_map then
+    o.cc_param_map[pp.cc] = p
+  elseif pp.cc14 and o.cc14_param_map then
+    o.cc14_param_map[pp.cc14] = p
+  elseif pp.nrpn and o.nrpn_param_map then
+    o.nrpn_param_map[pp.nrpn] = p
+  elseif pp.rpn and o.rpn_param_map then
+    o.rpn_param_map[pp.rpn] = p
   end
+
+  local hide = false
+  if pp.hide then
+    hide = true
+  end
+
+  local save = true
+  if pp.save ~= nil and not pp.save then
+    save = false
+  end
+
 
   -- REVIEW: maybe use controlspecs for everything?
 
   if pp.opts then
     params:add_option(p_id, p_name, pp.opts, pp.default)
     params:set_action(p_id, function(val)
-                        action(p, val)
+                        action(o, p, pp, val)
     end)
-    return
+    if hide then
+      params:hide(p_id)
+    end
+    params:set_save(p_id, save)
+    return p_id
   end
 
   if pp.cs then
@@ -89,9 +109,13 @@ function paramutils.add_param(o, paramprops, p, action)
       params:set(p_id, pp.default)
     end
     params:set_action(p_id, function(val)
-                        action(p, val)
+                        action(o, p, pp, val)
     end)
-    return
+    if hide then
+      params:hide(p_id)
+    end
+    params:set_save(p_id, save)
+    return p_id
   end
 
   if pp.cc or pp.cc14 or pp.nrpn then
@@ -111,10 +135,13 @@ function paramutils.add_param(o, paramprops, p, action)
                 min = min, max = max, default = pp.default,
                 formatter = fmt }
     params:set_action(p_id, function(val)
-                        action(p, val)
+                        action(o, p, pp, val)
     end)
-
-    return
+    if hide then
+      params:hide(p_id)
+    end
+    params:set_save(p_id, save)
+    return p_id
   end
 
   -- default to non-editable std number param
@@ -129,16 +156,23 @@ function paramutils.add_param(o, paramprops, p, action)
   params:add{ type = "number", id = p_id, name = p_name,
               min = min, max = max, default = pp.default,
               formatter = fmt }
-  -- no action as not editable
+  -- params:set_save(p_id, save)
+  -- REVIEW: no action as not editable?
 
+  return p_id
 end
 
 function paramutils.add_params(o, p_props_map, p_list,
                                action)
+  local added_p_ids = {}
   for _, p in pairs(p_list) do
-    paramutils.add_param(o, p_props_map, p,
-                         action)
+    local p_id = paramutils.add_param(o, p_props_map, p,
+                                      action)
+    if p_id then
+      table.insert(added_p_ids, p_id)
+    end
   end
+  return added_p_ids
 end
 
 
