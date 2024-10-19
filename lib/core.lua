@@ -14,6 +14,14 @@ function strim(s)
   return (s:gsub("^%s*(.-)%s*$", "%1"))
 end
 
+function snake_to_human(str)
+  str = str:gsub("_", " ")
+  str = str:gsub("(%a)(%w*)", function(first, rest)
+                   return first:upper() .. rest:lower()
+  end)
+  return str
+end
+
 
 -- ------------------------------------------------------------------------
 -- tables

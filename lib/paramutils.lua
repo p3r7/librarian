@@ -155,7 +155,7 @@ function paramutils.display_name(paramprops, p)
     return pp.disp
   end
 
-  return p
+  return snake_to_human(p)
 end
 
 
