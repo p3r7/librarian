@@ -101,6 +101,8 @@ end
 
 function hwutils.cloned(hw)
   return {
+    parent = hw,
+
     id = hw.id,
     fqid = hw.fqid,
     display_name = hw.display_name,
@@ -115,12 +117,129 @@ function hwutils.cloned(hw)
 
     -- REVIEW: maybe it's saner to have sub-hw w/ separate maps
     -- indeed, case of a device that listens to several channel, w/ channel same CC numbers...
-    --> but we only have 1 global `HW:midi_event` fn, so it's up to the device to then route according to the received channel
+    -- -> but we only have 1 global `HW:midi_event` fn, so it's up to the device to then route according to the received channel?
     cc_param_map = hw.cc_param_map,
     cc14_param_map = hw.cc14_param_map,
     rpn_param_map = hw.rpn_param_map,
     nrpn_param_map = hw.nrpn_param_map,
   }
+end
+
+function hwutils.og(hw)
+  local og = hw
+  while og.parent do
+    og = og.parent
+  end
+  return og
+end
+
+
+-- ------------------------------------------------------------------------
+-- hw params lookup maps
+
+function hwutils.hw_cc_map(hw_list)
+  local m = {}
+  for _, hw in ipairs(hw_list) do
+    m[hw.fqid] = hw.cc_param_map
+  end
+  return m
+end
+
+function hwutils.hw_cc14_map(hw_list)
+  local m = {}
+  for _, hw in ipairs(hw_list) do
+    m[hw.fqid] = hw.cc14_param_map
+  end
+  return m
+end
+
+function hwutils.cc14_hw_map(hw_list)
+  local m = {}
+  for _, hw in ipairs(hw_list) do
+    if hw.cc14_param_map then
+      for cc14, _param in pairs(hw.cc14_param_map) do
+        if not m[cc14] then
+          m[cc14] = {}
+        end
+        table.insert(m[cc14], hw)
+      end
+    end
+  end
+  return m
+end
+
+function hwutils.hw_rpn_map(hw_list)
+  local m = {}
+  for _, hw in ipairs(hw_list) do
+    m[hw.fqid] = hw.rpn_param_map
+  end
+  return m
+end
+
+function hwutils.hw_nrpn_map(hw_list)
+  local m = {}
+  for _, hw in ipairs(hw_list) do
+    m[hw.fqid] = hw.nrpn_param_map
+  end
+  return m
+end
+
+
+-- ------------------------------------------------------------------------
+-- hw params lookup fns
+
+local IGNORED_MIDI_DEVS = {
+  "16n", "bleached", "h2o2d",
+}
+
+function hwutils.hw_matched_dev(hw, dev)
+  return ( hw.midi_device == dev.name
+           or ( hw.midi_device == midiutil.MIDI_DEV_ALL
+                and not tab.contains(IGNORED_MIDI_DEVS, dev.name) ) )
+end
+
+function hwutils.should_parse_rpn(dev, ch, hw_map, hw_rpn_map)
+  for hw_fqid, _ in pairs(hw_rpn_map) do
+    local hw = hw_map[hw_fqid]
+    if hw.ch == ch
+      and hwutils.hw_matched_dev(hw, dev) then
+      return true
+    end
+  end
+end
+
+function hwutils.listens_for_rpn(hw, hw_rpn_map)
+  return ( hw_rpn_map[hw.fqid] ~= nil )
+end
+
+function hwutils.should_parse_nrpn(dev, ch, hw_map, hw_nrpn_map)
+  for hw_fqid, _ in pairs(hw_nrpn_map) do
+    local hw = hw_map[hw_fqid]
+    if hw.ch == ch
+      and hwutils.hw_matched_dev(hw, dev) then
+      return true
+    end
+  end
+end
+
+function hwutils.listens_for_nrpn(hw, hw_nrpn_map)
+  return ( hw_nrpn_map[hw.fqid] ~= nil )
+end
+
+function hwutils.should_parse_as_cc14(dev, ch, cc, cc14_hw_map)
+  for cc14, hw in pairs(cc14_hw_map) do
+    local cc14_split = nil
+    if type(cc14) == 'table' then
+      cc14_split = cc14
+    else
+      cc14_split = { val >> 7, val & 127 }
+    end
+    if hw.ch == ch
+      and hwutils.hw_matched_dev(hw, dev)
+      and tab.contains(cc14_split, cc) then
+      return true
+    end
+  end
 end
 
 

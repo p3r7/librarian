@@ -130,14 +130,6 @@ function H3000.new(MOD_STATE, id, count, midi_device, ch)
   -- end)
   p.last_dump_rcv_t = 0
 
-  -- midi input
-  p.sysex_payload = {}
-  p.is_sysex_dump_on = {}
-  p.current_nrpn_p_msb = {}
-  p.current_nrpn_p_lsb = {}
-  p.current_nrpn_v_msb = {}
-  p.current_nrpn_v_lsb = {}
-
   return p
 end
 
@@ -281,47 +273,17 @@ end
 -- ------------------------------------------------------------------------
 -- midi rcv
 
-function H3000:midi_event(dev, data)
-  local d = midi.to_msg(data)
-
-  if self.is_sysex_dump_on[dev.name] then
-    for _, b in pairs(data) do
-      table.insert(self.sysex_payload[dev.name], b)
-      if b == 0xf7 then
-        self.is_sysex_dump_on[dev.name] = false
-        self:handle_sysex(self.sysex_payload[dev.name])
-      end
-    end
-  elseif d.type == 'sysex' then
-    self.is_sysex_dump_on[dev.name] = true
-    self.sysex_payload[dev.name] = {}
-    for _, b in pairs(d.raw) do
-      table.insert(self.sysex_payload[dev.name], b)
-      if b == 0xf7 then
-        self.is_sysex_dump_on[dev.name] = false
-        self:handle_sysex(self.sysex_payload[dev.name])
-      end
-    end
+function H3000:midi_event(dev, d)
+  if d.type == 'sysex' then
+    -- NB: expects the full sysex payload to be reassembled by the mod
+    self:handle_sysex(d.raw)
   elseif d.type == 'program_change' then
     self:update_state_from_pgm_change(d.val)
-  elseif d.type == 'cc' then
-    if d.cc == 99 then
-      self.current_nrpn_p_msb[dev.name] = d.val
-    elseif d.cc == 98 then
-      self.current_nrpn_p_lsb[dev.name] = d.val
-    elseif d.cc == 6 then
-      self.current_nrpn_v_msb[dev.name] = d.val
-    elseif d.cc == 38 then
-      self.current_nrpn_v_lsb[dev.name] = d.val
-      local p = (self.current_nrpn_p_msb[dev.name] << 7) + self.current_nrpn_p_lsb[dev.name]
-      local v = (self.current_nrpn_v_msb[dev.name] << 7) + self.current_nrpn_v_lsb[dev.name]
-      if self.debug then
-        print("<- NRPN - #" .. p .. " - " .. v)
-      end
-    else
-      if self.debug then
-        print("<- CC - #" .. d.cc .. " - " .. d.val)
-      end
+  elseif d.type == 'nrpn' then
+    print("<- NRPN - #" .. d.nrpn .. " - " .. d.val)
+  else
+    if self.debug then
+      print("<- CC - #" .. d.cc .. " - " .. d.val)
     end
   end
 end

@@ -15,26 +15,35 @@ end
 
 
 -- -------------------------------------------------------------------------
--- consts
-
-local IGNORED_MIDI_DEVS = {
-  "16n", "bleached", "h2o2d",
-}
-
-
--- -------------------------------------------------------------------------
 -- state
 
 local hw_list = {}
+local hw_map = {}
 local MOD_STATE = {
   hw_list = hw_list,
+  hw_map = hw_map,
   conf = nil,
 
   clock_pgm_change_t = 0,
   clock_pgm_dump_t = 0,
 
+  -- midi payload reassembly
+  -- - sysex
   dev_sysex_dump_on = {},
   dev_sysex_payload = {},
+  -- - cc14
+  dev_cc14_v_msb = {},
+  dev_cc14_v_lsb = {},
+  -- - nrpn
+  dev_nrpn_p_msb = {},
+  dev_nrpn_p_lsb = {},
+  dev_nrpn_v_msb = {},
+  dev_knrpn_v_lsb = {},
+  -- - rpn
+  dev_rpn_p_msb = {},
+  dev_rpn_p_lsb = {},
+  dev_rpn_v_msb = {},
+  dev_rpn_v_lsb = {},
 }
 
 -- NB: `pgm_dump_clock` re-fetches current pgm params, not necessarilly through a midi pgm_dump, it can use other APIs if available
@@ -121,6 +130,7 @@ local function init_devices_from_conf(conf)
       end
     end
     table.insert(hw_list, hw)
+    hw_map[hw.fqid] = hw
 
     ::NEXT_HW_INIT::
   end
@@ -131,6 +141,15 @@ local function init_devices_params()
     params:add_group(hw.display_name, hw:get_nb_params())
     hw:register_params()
   end
+
+  -- NB: we need to call those after registering params
+  -- so that each underlying hw param maps are set
+  MOD_STATE.hw_cc_map   = hwutils.hw_cc_map(hw_list)
+  MOD_STATE.hw_cc14_map = hwutils.hw_cc14_map(hw_list)
+  MOD_STATE.cc14_hw_map = hwutils.cc14_hw_map(hw_list)
+  MOD_STATE.hw_rpn_map  = hwutils.hw_rpn_map(hw_list)
+  MOD_STATE.hw_nrpn_map = hwutils.hw_nrpn_map(hw_list)
+
   _menu.rebuild_params()
 end
 
@@ -235,6 +254,12 @@ mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
                       local dev_id = dev.name
 
                       local has_done_sysex = false
+                      local has_done_rpn = false
+                      local rpn = nil
+                      local has_done_nrpn = false
+                      local nrpn = nil
+                      local has_done_cc14 = false
+                      local cc14 = nil
 
                       if MOD_STATE.dev_sysex_dump_on[dev_id] then
                         -- print("-> sysex (cont.)")
@@ -259,22 +284,89 @@ mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
                             MOD_STATE.dev_sysex_dump_on[dev_id] = false
                           end
                         end
+                      elseif d.type == 'cc' then
+                        -- TODO: handle both RPN and NRPN in //
+                        -- indeed, they use the same CCs for the val
+
+                        -- TODO: this is way more tricky than that.
+                        -- i need namespacing by ch + for cc14 by hw
+
+                        if hwutils.should_parse_rpn(dev, d.ch, MOD_STATE.hw_map, MOD_STATE.hw_rpn_map)
+                          and tab.contains({101, 100, 6, 38}, d.cc) then
+                          if d.cc == 101 then
+                            MOD_STATE.dev_rpn_p_msb[dev.name] = d.val
+                          elseif d.cc == 100 then
+                            MOD_STATE.dev_rpn_p_lsb[dev.name] = d.val
+                          elseif d.cc == 6 then
+                            MOD_STATE.dev_rpn_v_msb[dev.name] = d.val
+                          elseif d.cc == 38 then
+                            MOD_STATE.dev_rpn_v_lsb[dev.name] = d.val
+                            has_done_rpn = true
+                          end
+                        elseif hwutils.should_parse_nrpn(dev, d.ch, MOD_STATE.hw_map, MOD_STATE.hw_nrpn_map)
+                          and tab.contains({99, 98, 6, 38}, d.cc) then
+                          if d.cc == 99 then
+                            MOD_STATE.dev_nrpn_p_msb[dev.name] = d.val
+                          elseif d.cc == 98 then
+                            MOD_STATE.dev_nrpn_p_lsb[dev.name] = d.val
+                          elseif d.cc == 6 then
+                            MOD_STATE.dev_nrpn_v_msb[dev.name] = d.val
+                          elseif d.cc == 38 then
+                            MOD_STATE.dev_nrpn_v_lsb[dev.name] = d.val
+                            has_done_nrpn = true
+                          end
+                        elseif hwutils.should_parse_as_cc14(dev, d.ch, d.cc, MOD_STATE.cc14_hw_map) then
+                          print("received cc14")
+                          -- TODO: parse
+                        end
+                      end
+
+                      if has_done_sysex then
+                        d = {
+                          type = 'sysex',
+                          raw = MOD_STATE.dev_sysex_payload[dev_id],
+                        }
+                      elseif has_done_rpn then
+                        rpn = {
+                          type = 'rpn',
+                          ch = d.ch,
+                          rpn = (MOD_STATE.dev_rpn_p_msb[dev.name] << 7) + MOD_STATE.dev_nrpn_p_lsb[dev.name],
+                          val = (MOD_STATE.dev_rpn_v_msb[dev.name] << 7) + MOD_STATE.dev_nrpn_v_lsb[dev.name],
+                        }
+                        -- REVIEW: clear `MOD_STATE.dev_rpn_*`
+                      elseif has_done_nrpn then
+                        nrnp = {
+                          type = 'nrpn',
+                          ch = d.ch,
+                          nrpn = (MOD_STATE.dev_nrpn_p_msb[dev.name] << 7) + MOD_STATE.dev_nrpn_p_lsb[dev.name],
+                          val = (MOD_STATE.dev_nrpn_v_msb[dev.name] << 7) + MOD_STATE.dev_nrpn_v_lsb[dev.name],
+                        }
+                        -- REVIEW: clear `MOD_STATE.dev_nrpn_*`
+                      elseif has_done_cc14 then
+                        cc14 = {
+                          type = 'cc14',
+                          ch = d.ch,
+                          cc14 = {}, -- TODO: set it!
+                          val = (MOD_STATE.dev_cc14_v_msb[dev.name] << 7) + MOD_STATE.dev_cc14_v_lsb[dev.name],
+                        }
                       end
 
                       for _, hw in ipairs(hw_list) do
-                        if (hw.midi_device == dev.name
-                            or (hw.midi_device == midiutil.MIDI_DEV_ALL and not tab.contains(IGNORED_MIDI_DEVS, dev.name))) then
+                        if hwutils.hw_matched_dev(hw, dev) then
 
-                          -- NB: sysex is omni, send to all hw
-                          if has_done_sysex and hw.handle_sysex then
-                            hw:handle_sysex(MOD_STATE.dev_sysex_payload[dev_id])
-                            return
-                          end
+                          -- FIXME: need to support that device can listen of multiple midi channels
+                          if hw.midi_event and ((not d.ch) or d.ch == hw.ch) then
 
-                          if hw.midi_event and (not midiutil.msg_has_ch(d) or d.ch == hw.ch) then
-                            hw:midi_event(dev, data)
+                            local d2 = d
+                            if has_done_rpn and hwutils.listens_for_rpn(MOD_STATE.hw, MOD_STATE.hw_rpn_map) then
+                              d2 = rpn
+                            elseif has_done_nrpn and hwutils.listens_for_nrpn(MOD_STATE.hw, MOD_STATE.hw_nrpn_map) then
+                              d2 = nrpn
+                            end
 
-                            if d.type == "program_change" then
+                            hw:midi_event(dev, d2)
+
+                            if d.type == 'program_change' then
                               hw.needs_pgm_dump = true
                               hw.needs_pgm_dump_t = MOD_STATE.clock_pgm_dump_t
                             end

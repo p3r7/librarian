@@ -172,12 +172,6 @@ end
 -- ------------------------------------------------------------------------
 -- send - generic
 
-function midiutil.msg_has_ch(msg)
-  return tab.contains( {"note_on", "note_off",  "pitchbend",
-                        "key_pressure", "channel_pressure",
-                        "cc", "program_change"}, msg.type)
-end
-
 function midiutil.send_msg(m, msg)
   -- NB: prevent sending params when a inmplicit params:bang happens after adding them
   -- not sure about this behaviour, how to handle scripts that load ther last PSET at init?
@@ -337,7 +331,7 @@ end
 -- MSB & LSB CC numbers are traditionally 32 apart
 function midiutil.send_cc14(midi_device, ch, cc14, val)
   local id = nil
-  if type(rpn) == 'table' then
+  if type(cc14) == 'table' then
     id = cc14
   else
     id = {cc14 >> 7, cc14 & 127}

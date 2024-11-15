@@ -11,13 +11,31 @@ include('librarian/lib/core')
 
 
 -- ------------------------------------------------------------------------
+-- utils
+
+-- NB: same as `hwutils.og`, copied here to prevent circular dep
+local function actual_hw(hw)
+  local og = hw
+  while og.parent do
+    og = og.parent
+  end
+  return og
+end
+
+
+-- ------------------------------------------------------------------------
 
 -- NB: generic param set action, assuming that the device instance `o` only has 1 voice
 -- for devices w/ more than a voice, you'd need to redefine/wrap this
 -- see `lib/models/nord_drum_2.lua` for an example
-function paramutils.set(o, p, pp, val)
+function paramutils.set(hw, p, pp, val)
+  local og_hw = actual_hw(hw)
 
-  local ch = o.ch
+  if og_hw.inhibit_midi then
+    return
+  end
+
+  local ch = hw.ch
   if pp.ch then
     ch = pp.ch
   end
@@ -27,24 +45,29 @@ function paramutils.set(o, p, pp, val)
   end
 
   if pp.cc then
-    midiutil.send_cc(o.midi_device, o.ch, pp.cc, val)
+    if og_hw.debug then
+      print("-> CC - " .. hw.fqid .. " - #" .. pp.cc .. " - " .. val .. " - " .. p)
+    end
+    midiutil.send_cc(hw.midi_device, hw.ch, pp.cc, val)
     return
   end
 
   if pp.cc14 then
-    midiutil.send_cc14(o.midi_device, o.ch, pp.cc14, val)
+    midiutil.send_cc14(hw.midi_device, hw.ch, pp.cc14, val)
     return
   end
 
   if pp.nrpn then
-    midiutil.send_nrpn(o.midi_device, o.ch, pp.nrpn, val)
+    midiutil.send_nrpn(hw.midi_device, hw.ch, pp.nrpn, val)
     return
   end
 end
 
-function paramutils.add_param(o, paramprops, p,
+function paramutils.add_param(hw, paramprops, p,
                               action)
-  local p_id = o.fqid..'_'..p
+  local og_hw = actual_hw(hw)
+
+  local p_id = hw.fqid..'_'..p
 
   local pp = paramprops[p]
   if not pp then
@@ -63,18 +86,30 @@ function paramutils.add_param(o, paramprops, p,
   local p_name = paramutils.display_name(paramprops, p)
 
   local fmt = pp.fmt
-  if pp.fmt == nil and o.default_fmt then
-    fmt = o.default_fmt
+  if pp.fmt == nil and hw.default_fmt then
+    fmt = hw.default_fmt
   end
 
-  if pp.cc and o.cc_param_map then
-    o.cc_param_map[pp.cc] = p
-  elseif pp.cc14 and o.cc14_param_map then
-    o.cc14_param_map[pp.cc14] = p
-  elseif pp.nrpn and o.nrpn_param_map then
-    o.nrpn_param_map[pp.nrpn] = p
-  elseif pp.rpn and o.rpn_param_map then
-    o.rpn_param_map[pp.rpn] = p
+  if pp.cc then
+    if not og_hw.cc_param_map then
+      og_hw.cc_param_map = {}
+    end
+    og_hw.cc_param_map[pp.cc] = p
+  elseif pp.cc14 then
+    if not og_hw.cc14_param_map then
+      og_hw.cc14_param_map = {}
+    end
+    og_hw.cc14_param_map[pp.cc14] = p
+  elseif pp.rpn then
+    if not og_hw.rpn_param_map then
+      og_hw.rpn_param_map = {}
+    end
+    og_hw.rpn_param_map[pp.rpn] = p
+  elseif pp.nrpn then
+    if not og_hw.nrpn_param_map then
+      og_hw.nrpn_param_map = {}
+    end
+    og_hw.nrpn_param_map[pp.nrpn] = p
   end
 
   local hide = false
@@ -93,7 +128,7 @@ function paramutils.add_param(o, paramprops, p,
   if pp.opts then
     params:add_option(p_id, p_name, pp.opts, pp.default)
     params:set_action(p_id, function(val)
-                        action(o, p, pp, val)
+                        action(hw, p, pp, val)
     end)
     if hide then
       params:hide(p_id)
@@ -109,7 +144,7 @@ function paramutils.add_param(o, paramprops, p,
       params:set(p_id, pp.default)
     end
     params:set_action(p_id, function(val)
-                        action(o, p, pp, val)
+                        action(hw, p, pp, val)
     end)
     if hide then
       params:hide(p_id)
@@ -135,7 +170,7 @@ function paramutils.add_param(o, paramprops, p,
                 min = min, max = max, default = pp.default,
                 formatter = fmt }
     params:set_action(p_id, function(val)
-                        action(o, p, pp, val)
+                        action(hw, p, pp, val)
     end)
     if hide then
       params:hide(p_id)

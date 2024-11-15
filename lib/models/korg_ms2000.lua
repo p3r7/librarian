@@ -58,15 +58,13 @@ function MS2000.new(MOD_STATE, id, count, midi_device, ch)
 
   p.debug = false
 
-  p.no_midi = nil
+  p.inhibit_midi = nil
 
   p.current_pgm_id = nil
   p.current_pgm_name = nil
 
   p.last_dump_rcv_t = nil
 
-  p.cc_param_map = {}
-  p.nrpn_param_map = {}
   p.timbre_params = {}
 
   p.child_hw = {}
@@ -119,7 +117,7 @@ function MS2000:register_params()
   params:add_option(pgm_p_id, "PGM", pgm_list_opts)
   params:set_action(pgm_p_id,
                     function(v)
-                      if self.no_midi then
+                      if self.inhibit_midi then
                         return
                       end
                       -- NB: we don't directly send a PGM change but wait for the param to stop changing before firing
@@ -136,7 +134,8 @@ function MS2000:register_params()
 
     self.timbre_params[t] = paramutils.add_params(hw, ms2000_params.TIMBRE_PARAM_PROPS, ms2000_params.TIMBRE_PARAMS,
                                                   function(hw, p, pp, val)
-                                                    if hw.no_midi then
+                                                    local og_hw = hwutils.og(hw)
+                                                    if og_hw.inhibit_midi then
                                                       return
                                                     end
 
@@ -180,24 +179,11 @@ end
 -- ------------------------------------------------------------------------
 -- impl - midi rcv
 
-function MS2000:inhibit_midi()
-  self.no_midi = true
-  for _, hw in ipairs(self.child_hw) do
-    hw.no_midi = true
-  end
-end
-
-function MS2000:enable_midi()
-  self.no_midi = nil
-  for _, hw in ipairs(self.child_hw) do
-    hw.no_midi = nil
-  end
-end
-
-function MS2000:midi_event(dev, data)
-  local d = midi.to_msg(data)
-
-  if d.type == 'program_change' then
+function MS2000:midi_event(dev, d)
+  if d.type == 'sysex' then
+    -- NB: expects the full sysex payload to be reassembled by the mod
+    self:handle_sysex(d.raw)
+  elseif d.type == 'program_change' then
     if self.debug then
       print("<- PGM CHANGE - " .. self.fqid .. " - " .. d.val)
     end
@@ -246,7 +232,9 @@ function MS2000:midi_event(dev, data)
         if self.debug then
           print("   " .. p_id .. "=" .. v)
         end
+        self.inhibit_midi = true
         params:set(p_id, v)
+        self.inhibit_midi = false
       end
     else
       print("   unknown CC")
@@ -275,11 +263,11 @@ end
 function MS2000:update_state_from_pgm_change(pgm_id)
   self.current_pgm_id = pgm_id + 1
 
-  self:inhibit_midi()
+  self.inhibit_midi = true
   params:set(self.fqid .. '_' .. 'pgm', self.current_pgm_id)
   -- NB: when switching pgm, the hw resets its active timbre to the 1rst
   params:set(self.fqid .. '_' .. 'edited_timbre', 1)
-  self:enable_midi()
+  self.inhibit_midi = false
 
   -- self:clear_pgm_state()
   -- self.sent_pgm_t = self.clock_pgm_t
@@ -296,7 +284,7 @@ function MS2000:update_state_from_pgm_dump(raw_payload)
   local pgm = ms2000_sysex.parse_pgm_dump(raw_payload)
   print(inspect(pgm))
 
-  self:inhibit_midi()
+  self.inhibit_midi = true
 
   self.current_pgm_name = pgm.name
 
@@ -331,7 +319,7 @@ function MS2000:update_state_from_pgm_dump(raw_payload)
     end
   end
 
-  self:enable_midi()
+  self.inhibit_midi = false
 
   if self.pgm_dump_rcv then
     self.pgm_dump_rcv(self.current_pgm_id)

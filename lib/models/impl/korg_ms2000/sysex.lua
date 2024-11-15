@@ -161,8 +161,8 @@ function ms2000_sysex.parse_timbre_data(payload)
   t.osc1_dwgs                      = payload[11]
 
   -- osc 2
-  t.osc2_ring                      = binutils.bits_in_byte_0(payload[13], 4, 6)
   t.osc2_wave                      = binutils.bits_in_byte_0(payload[13], 0, 2)
+  t.osc2_mod                       = binutils.bits_in_byte_0(payload[13], 4, 6)
   t.osc2_semitone                  = payload[14] - 64
   t.osc2_tune                      = payload[15] - 64
 
