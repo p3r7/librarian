@@ -153,10 +153,10 @@ function paramutils.add_param(hw, paramprops, p,
     return p_id
   end
 
-  if pp.cc or pp.cc14 or pp.nrpn then
+  if pp.cc or pp.rpn or pp.nrpn or pp.cc14 then
     local min = 0
     local max = 127
-    if pp.cc14 or pp.nrpn then
+    if pp.rpn or pp.nrpn or pp.cc14 then
       max = 16383 -- 1111111 1111111
     end
     if pp.min then
