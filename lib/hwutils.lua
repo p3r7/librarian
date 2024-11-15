@@ -6,6 +6,7 @@ local hwutils = {}
 -- ------------------------------------------------------------------------
 -- deps
 
+local binutils   = include('librarian/lib/binutils')
 local paramutils = include('librarian/lib/paramutils')
 local midiutil = include('librarian/lib/midiutil')
 local nbutils = include('librarian/lib/nbutils')
@@ -226,21 +227,16 @@ function hwutils.listens_for_nrpn(hw, hw_nrpn_map)
   return ( hw_nrpn_map[hw.fqid] ~= nil )
 end
 
-function hwutils.should_parse_as_cc14(dev, ch, cc, cc14_hw_map)
-  for cc14, hw in pairs(cc14_hw_map) do
-    local cc14_split = nil
-    if type(cc14) == 'table' then
-      cc14_split = cc14
-    else
-      cc14_split = { val >> 7, val & 127 }
-    end
-    if hw.ch == ch
-      and hwutils.hw_matched_dev(hw, dev)
-      and tab.contains(cc14_split, cc) then
-      return true
-    end
-  end
-end
+-- function hwutils.should_parse_as_cc14(dev, ch, cc, hw)
+--   for cc14, _param in pairs(hw.cc14_param_map) do
+--     local id = binutils.ensure_14bits_as_table(cc14)
+--     if hw.ch == ch
+--       and hwutils.hw_matched_dev(hw, dev)
+--       and tab.contains(id, cc) then
+--       return true
+--     end
+--   end
+-- end
 
 
 -- ------------------------------------------------------------------------

@@ -2,6 +2,23 @@ local binutils = {}
 
 
 -- ------------------------------------------------------------------------
+-- 14bit <-> 7bit
+
+function binutils.ensure_14bits_as_table(v)
+  if type(v) == 'table' then
+    return v
+  end
+  return { v >> 7, v & 127 }
+end
+
+function binutils.ensure_14bits_as_val(v)
+  if type(v) == 'table' then
+    return v[1] << 7 + v[2]
+  end
+  return v
+end
+
+-- ------------------------------------------------------------------------
 
 function binutils.conv7to8bit(bytes)
   local out = {}

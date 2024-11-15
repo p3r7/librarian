@@ -5,6 +5,7 @@ local paramutils = {}
 -- ------------------------------------------------------------------------
 --deps
 
+local binutils = include('librarian/lib/binutils')
 local midiutil = include('librarian/lib/midiutil')
 
 include('librarian/lib/core')
@@ -75,6 +76,16 @@ function paramutils.add_param(hw, paramprops, p,
     return
   end
 
+  og_hw.param_props_map = og_hw.param_props_map or {}
+  og_hw.param_props_map[p] = og_hw.param_props_map[p] or pp
+
+  og_hw.param_map = og_hw.param_map or {}
+  og_hw.param_map[p_id] = pp
+  if hw.parent then
+    hw.param_map = og_hw.param_map or {}
+    hw.param_map[p_id] = pp
+  end
+
   if not action then
     if pp.action then
       action = pp.action
@@ -91,24 +102,16 @@ function paramutils.add_param(hw, paramprops, p,
   end
 
   if pp.cc then
-    if not og_hw.cc_param_map then
-      og_hw.cc_param_map = {}
-    end
+    og_hw.cc_param_map = og_hw.cc_param_map or {}
     og_hw.cc_param_map[pp.cc] = p
   elseif pp.cc14 then
-    if not og_hw.cc14_param_map then
-      og_hw.cc14_param_map = {}
-    end
-    og_hw.cc14_param_map[pp.cc14] = p
+    og_hw.cc14_param_map = og_hw.cc14_param_map or {}
+    og_hw.cc14_param_map[binutils.ensure_14bits_as_val(pp.cc14)] = p
   elseif pp.rpn then
-    if not og_hw.rpn_param_map then
-      og_hw.rpn_param_map = {}
-    end
+    og_hw.rpn_param_map = og_hw.rpn_param_map or {}
     og_hw.rpn_param_map[pp.rpn] = p
   elseif pp.nrpn then
-    if not og_hw.nrpn_param_map then
-      og_hw.nrpn_param_map = {}
-    end
+    og_hw.nrpn_param_map = og_hw.nrpn_param_map or {}
     og_hw.nrpn_param_map[pp.nrpn] = p
   end
 

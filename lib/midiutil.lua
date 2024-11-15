@@ -4,6 +4,12 @@ local midiutil = {}
 
 
 -- ------------------------------------------------------------------------
+-- deps
+
+local binutils   = include('librarian/lib/binutils')
+
+
+-- ------------------------------------------------------------------------
 -- consts
 
 midiutil.MIDI_DEV_ALL = "ALL"
@@ -170,7 +176,7 @@ end
 
 
 -- ------------------------------------------------------------------------
--- send - generic
+-- msg - generic
 
 function midiutil.send_msg(m, msg)
   -- NB: prevent sending params when a inmplicit params:bang happens after adding them
@@ -228,7 +234,7 @@ end
 
 
 -- ------------------------------------------------------------------------
--- send - pgm change
+-- msg - pgm change
 
 function midiutil.send_pgm_change(midi_device, ch, pgm)
   local msg = {
@@ -241,7 +247,7 @@ end
 
 
 -- ------------------------------------------------------------------------
--- send - sysex
+-- msg - sysex
 
 function midiutil.send_sysex(midi_device, payload)
   local msg = {
@@ -253,7 +259,7 @@ end
 
 
 -- ------------------------------------------------------------------------
--- send - note on / off
+-- msg - note on / off
 
 function midiutil.send_note_on(midi_device, note_num, vel, ch)
   vel = util.clamp(util.round(vel), 0, 127)
@@ -311,7 +317,7 @@ end
 
 
 -- ------------------------------------------------------------------------
--- send - 14-bit cc
+-- msg - 14-bit cc
 
 -- range: 0-16384
 --
@@ -330,15 +336,21 @@ end
 -- Coarse/Fine CC pair
 -- MSB & LSB CC numbers are traditionally 32 apart
 function midiutil.send_cc14(midi_device, ch, cc14, val)
-  local id = nil
-  if type(cc14) == 'table' then
-    id = cc14
-  else
-    id = {cc14 >> 7, cc14 & 127}
-  end
+  local id = binutils.ensure_14bits_as_table(cc14)
 
   midiutil.send_cc(midi_device, ch, id[1], val >> 7)
   midiutil.send_cc(midi_device, ch, id[2], val & 127)
+end
+
+-- FIXME: sould match ch as well
+-- ch can be obtained from param
+function midiutil.matched_cc14_for_cc(cc, cc14_map)
+  for cc14, _ in pairs(cc14_map) do
+    local id = binutils.ensure_14bits_as_table(cc14)
+    if tab.contains(id, cc) then
+      return id
+    end
+  end
 end
 
 -- RPN
@@ -351,13 +363,7 @@ end
 -- - 0x7F7F Null (aka Dummy or Reset)
 function midiutil.send_rpn(midi_device, ch, rpn, val, do_null)
   if do_null == nil then do_null = true end
-
-  local id = nil
-  if type(rpn) == 'table' then
-    id = rpn
-  else
-    id = {rpn >> 7, rpn & 127}
-  end
+  local id = binutils.ensure_14bits_as_table(rpn)
 
   -- - address
   midiutil.send_cc(midi_device, ch, 101, id[1])
@@ -381,12 +387,7 @@ end
 
 -- NRPN
 function midiutil.send_nrpn(midi_device, ch, nrpn, val)
-  local id = nil
-  if type(nrpn) == 'table' then
-    id = nrpn
-  else
-    id = {nrpn >> 7, nrpn & 127}
-  end
+  local id = binutils.ensure_14bits_as_table(nrpn)
 
   -- - address
   midiutil.send_cc(midi_device, ch, 99, id[1])
