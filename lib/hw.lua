@@ -92,7 +92,7 @@ function Hw:register_params()
     end)
   end
 
-  paramutils.add_params(hw, self.param_props, self.param_list)
+  paramutils.add_params(self, self.param_props, self.param_list)
 end
 
 
