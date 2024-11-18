@@ -56,8 +56,8 @@ function Hw.new(def, MOD_STATE, id, count, midi_device, ch, nb)
   hw.param_list = {}
   hw.params = hw.params or {}
   for _, p in pairs(hw.params) do
-    hw.param_props[hw.name] = p
-    table.insert(hw.param_list, hw.name)
+    hw.param_props[p.name] = p
+    table.insert(hw.param_list, p.name)
   end
 
   return hw
