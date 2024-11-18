@@ -5,6 +5,7 @@ local mod = require 'core/mods'
 local MOD_NAME = mod.this_name or "librarian"
 
 local binutils  = include('librarian/lib/binutils')
+local GenericHw  = include('librarian/lib/hw')
 local hwutils  = include('librarian/lib/hwutils')
 local midiutil = include('librarian/lib/midiutil')
 
@@ -114,7 +115,7 @@ local function init_devices_from_conf(conf)
       hw = HW.new(MOD_STATE, id, count_for_model,
                   midi_device, hw_conf.ch, hw_conf.nb)
     else
-      hw = hwutils.hw_from_static(HW, MOD_STATE, id, count_for_model, midi_device, hw_conf.ch)
+      hw = GenericHw.new(HW, MOD_STATE, id, count_for_model, midi_device, hw_conf.ch)
     end
     if hw_conf.params ~= nil then
       for k, v in pairs(hw_conf.params) do
