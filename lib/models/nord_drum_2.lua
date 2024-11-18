@@ -7,7 +7,8 @@
 
 
 local NordDrum2 = {}
-NordDrum2.__index = NordDrum2
+local Hw = include('librarian/lib/hw')
+setmetatable(NordDrum2, {__index = Hw})
 
 local KIND = "nord_drum_2"
 local SHORTHAND = "nd2"
@@ -56,42 +57,27 @@ local GLOBAL_CH_NOTES = {60, 62, 64, 65, 67, 69}
 -- API - constructors
 
 function NordDrum2.new(MOD_STATE, id, count, midi_device, ch, nb)
-  local p = setmetatable({}, NordDrum2)
+  ch = ch or GLOBAL_CH
 
-  p.MOD_STATE = MOD_STATE
+  local hw = Hw.new(
+    {
+      kind         = KIND,
+      shorthand    = SHORTHAND,
+      display_name = DISPLAY_NAME,
+      plays_notes  = true,
+    },
+    MOD_STATE, id, count, midi_device, ch, nb)
+  setmetatable(hw, {__index = NordDrum2})
 
-  p.kind = KIND
-  p.shorthand = SHORTHAND
-  p.display_name = DISPLAY_NAME
+  hw.global_channel_notes = GLOBAL_CH_NOTES
+  hw.voice_channels       = VOICE_CH_LIST
 
-  p.id = id
-  p.fqid = p.shorthand.."_"..id
-  if count > 1 then
-    p.display_name = p.display_name.." #"..id
-  end
+  hw.default_fmt = nd2_fmt.format_basic
 
-  p.midi_device = midi_device
+  hw.supports_all_notes_off = false
+  hw.supports_notes_off = false
 
-  if ch == nil then
-    ch = GLOBAL_CH
-  end
-
-  p.ch = ch
-  p.global_channel_notes = GLOBAL_CH_NOTES
-
-  p.voice_channels = VOICE_CH_LIST
-
-  p.nb = true
-  if nb ~= nil and not nb then
-    p.nb = false
-  end
-
-  p.default_fmt = nd2_fmt.format_basic
-
-  p.supports_all_notes_off = false
-  p.supports_notes_off = false
-
-  return p
+  return hw
 end
 
 

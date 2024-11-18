@@ -2,7 +2,8 @@
 
 
 local H3000 = {}
-H3000.__index = H3000
+local Hw = include('librarian/lib/hw')
+setmetatable(H3000, {__index = Hw})
 
 H3000.KIND = "eventide_h3000"
 H3000.SHORTHAND = "h3k"
@@ -45,69 +46,64 @@ H3000.PARAMS = {
 
 local DEVICE_ID = 0
 
+local DEFAULT_CH = 1
+
 
 -- ------------------------------------------------------------------------
 -- API - constructors
 
 function H3000.new(MOD_STATE, id, count, midi_device, ch)
-  local p = setmetatable({}, H3000)
+  ch = ch or DEFAULT_CH
 
-  p.MOD_STATE = MOD_STATE
+  local hw = Hw.new(
+    {
+      kind         = H3000.KIND,
+      shorthand    = H3000.SHORTHAND,
+      display_name = H3000.DISPLAY_NAME,
+      -- TODO: a few algos kinda do, but that's rather niche...
+      plays_notes  = false,
+    },
+    MOD_STATE, id, count, midi_device, ch)
+  setmetatable(hw, {__index = H3000})
 
-  p.kind = H3000.KIND
-  p.shorthand = H3000.SHORTHAND
-  p.display_name = H3000.DISPLAY_NAME
+  hw.debug = false
 
-  p.id = id
-  p.fqid = p.shorthand.."_"..id
-  if count > 1 then
-    p.display_name = p.display_name.." #"..id
-  end
-
-  p.midi_device = midi_device
-
-  if ch == nil then ch = 1 end
-  p.ch = ch
-
-  p.device_id = DEVICE_ID
-
-  p.debug = false
-
-  p.inhibit_midi = false
+  hw.inhibit_midi = false
 
   -- current pgm
-  p.pgm_list = {}
-  p.pgm_map = {}
-  p.algo_pgm_map = {}
-  p.name_pgm_map = {}
+  -- REVIEW: maybe pass pgm_list in the generic `Hw.new` as it knows how to interpret it?
+  hw.pgm_list = {}
+  hw.pgm_map = {}
+  hw.algo_pgm_map = {}
+  hw.name_pgm_map = {}
   local pgm_list = h3000.read_pgm_list()
   if pgm_list then
-    p.pgm_list = pgm_list
-    for i, pgm in ipairs(p.pgm_list) do
+    hw.pgm_list = pgm_list
+    for i, pgm in ipairs(hw.pgm_list) do
       local id, name, algo = table.unpack(pgm)
-      p.pgm_map[id] = {name, algo, i}
-      p.name_pgm_map[name] = id
-      if p.algo_pgm_map[algo] == nil then
-        p.algo_pgm_map[algo] = {}
+      hw.pgm_map[id] = {name, algo, i}
+      hw.name_pgm_map[name] = id
+      if hw.algo_pgm_map[algo] == nil then
+        hw.algo_pgm_map[algo] = {}
       end
-      table.insert(p.algo_pgm_map[algo], id)
+      table.insert(hw.algo_pgm_map[algo], id)
     end
   end
 
-  p.current_bank = nil
-  p.current_pgm = nil
-  p.current_pgm_name = nil
-  p.current_algo = nil
-  p.prev_algo = nil
-  p.pgm_change_rcv = nil
-  p.pgm_dump_rcv = nil
+  hw.current_bank = nil
+  hw.current_pgm = nil
+  hw.current_pgm_name = nil
+  hw.current_algo = nil
+  hw.prev_algo = nil
+  hw.pgm_change_rcv = nil
+  hw.pgm_dump_rcv = nil
 
   -- midi congestion handling - params
-  p.algo_p_map = {}
-  p.clk_midi_smooth_t = 0
-  p.p_last_sent_t = {}
-  p.p_last_unsent_v = {}
-  p.clock_params = clock.run(function()
+  hw.algo_p_map = {}
+  hw.clk_midi_smooth_t = 0
+  hw.p_last_sent_t = {}
+  hw.p_last_unsent_v = {}
+  hw.clock_params = clock.run(function()
       while true do
         clock.sleep(FREQ_MIDI_SMOOTH_CLK)
         p:param_congestion_clock(FREQ_MIDI_SMOOTH_CLK)
@@ -115,22 +111,22 @@ function H3000.new(MOD_STATE, id, count, midi_device, ch)
   end)
 
   -- midi congestion handling - pgm
-  p.after_pgm_dump_wait_s = AFTER_PGM_DUMP_WAIT_S
-  p.sent_pgm_t = nil -- REVIEW: keep that one?
-  -- p.clock_pgm_t = 0
-  p.last_sent_pgm_change = false
-  p.sent_pgm_new = false
-  p.is_waiting_for_dump_after_pgm_change = false
-  p.is_waiting_for_dump = false
-  -- p.clock_pgm = clock.run(function()
+  hw.after_pgm_dump_wait_s = AFTER_PGM_DUMP_WAIT_S
+  hw.sent_pgm_t = nil -- REVIEW: keep that one?
+  -- hw.clock_pgm_t = 0
+  hw.last_sent_pgm_change = false
+  hw.sent_pgm_new = false
+  hw.is_waiting_for_dump_after_pgm_change = false
+  hw.is_waiting_for_dump = false
+  -- hw.clock_pgm = clock.run(function()
   --     while true do
   --       clock.sleep(FREQ_PGM_REFRESH)
   --       p:pgm_change_clock(FREQ_PGM_REFRESH)
   --     end
   -- end)
-  p.last_dump_rcv_t = 0
+  hw.last_dump_rcv_t = 0
 
-  return p
+  return hw
 end
 
 function H3000:cleanup()

@@ -1,7 +1,8 @@
 -- librarian/model/alesis akira
 
 local AlesisAkira = {}
-AlesisAkira.__index = AlesisAkira
+local Hw = include('librarian/lib/hw')
+setmetatable(AlesisAkira, {__index = Hw})
 
 local KIND = "alesis_akira"
 local SHORTHAND = "akr"
@@ -35,33 +36,23 @@ local DEFAULT_CC_Z = 93
 -- API - constructors
 
 function AlesisAkira.new(MOD_STATE, id, count, midi_device, ch)
-  local p = setmetatable({}, AlesisAkira)
+  ch = ch or DEFAULT_CH
 
-  p.MOD_STATE = MOD_STATE
+  local hw = Hw.new(
+    {
+      kind         = KIND,
+      shorthand    = SHORTHAND,
+      display_name = DISPLAY_NAME,
+      plays_notes  = false,
+    },
+    MOD_STATE, id, count, midi_device, ch)
+  setmetatable(hw, AlesisAkira)
 
-  p.kind = KIND
-  p.shorthand = SHORTHAND
-  p.display_name = DISPLAY_NAME
+  hw.knob_ccs = {DEFAULT_CC_X, DEFAULT_CC_Y, DEFAULT_CC_Z}
 
-  p.id = id
-  p.fqid = p.shorthand.."_"..id
-  p.display_name = p.kind
-  if count > 1 then
-    p.display_name = p.display_name.." #"..id
-  end
+  hw.pgm = nil
 
-  p.midi_device = midi_device
-
-  if ch == nil then
-    ch = DEFAULT_CH
-  end
-
-  p.ch = ch
-  p.knob_ccs = {DEFAULT_CC_X, DEFAULT_CC_Y, DEFAULT_CC_Z}
-
-  p.pgm = nil
-
-  return p
+  return hw
 end
 
 

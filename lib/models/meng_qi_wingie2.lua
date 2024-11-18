@@ -2,7 +2,8 @@
 
 
 local Wingie2 = {}
-Wingie2.__index = Wingie2
+local Hw = include('librarian/lib/hw')
+setmetatable(Wingie2, {__index = Hw})
 
 
 -- -------------------------------------------------------------------------
@@ -117,37 +118,24 @@ Wingie2.PARAMS = {
 -- API - constructors
 
 function Wingie2.new(MOD_STATE, id, count, midi_device, ch, nb)
-  local p = setmetatable({}, NordDrum2)
+  ch = ch or LEFT_RIGHT_CH
 
-  p.MOD_STATE = MOD_STATE
+  local hw = Hw.new(
+    {
+      kind         = KIND,
+      shorthand    = SHORTHAND,
+      display_name = DISPLAY_NAME,
+      plays_notes  = true,
+    },
+    MOD_STATE, id, count, midi_device, ch)
+  setmetatable(hw, {__index = Wingie2})
 
-  p.kind = KIND
-  p.shorthand = SHORTHAND
-  p.display_name = DISPLAY_NAME
+  hw.left_ch = LEFT_CH
+  hw.right_ch = RIGHT_CH
 
-  p.id = id
-  p.fqid = p.shorthand.."_"..id
-  if count > 1 then
-    p.display_name = p.display_name.." #"..id
-  end
+  hw.supports_notes_off = false
 
-  p.midi_device = midi_device
-
-  if ch == nil then
-    ch = LEFT_RIGHT_CH
-  end
-
-  p.left_ch = LEFT_CH
-  p.right_ch = RIGHT_CH
-
-  p.nb = true
-  if nb ~= nil and not nb then
-    p.nb = false
-  end
-
-  p.supports_notes_off = false
-
-  return p
+  return hw
 end
 
 

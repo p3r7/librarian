@@ -1,7 +1,8 @@
 -- librarian/model/korg ms2000
 
 local MS2000 = {}
-MS2000.__index = MS2000
+local Hw = include('librarian/lib/hw')
+setmetatable(MS2000, {__index = Hw})
 
 MS2000.KIND = "korg_ms2000"
 MS2000.SHORTHAND = "ms2k"
@@ -28,54 +29,49 @@ MS2000.PARAMS = {
   'device_id',
 }
 
+local DEFAULT_CH = 1
+
 
 -- ------------------------------------------------------------------------
 -- API - constructors
 
-function MS2000.new(MOD_STATE, id, count, midi_device, ch)
-  local p = setmetatable({}, MS2000)
+function MS2000.new(MOD_STATE, id, count, midi_device, ch, nb)
+  ch = ch or DEFAULT_CH
 
-  p.MOD_STATE = MOD_STATE
-
-  p.kind = MS2000.KIND
-  p.shorthand = MS2000.SHORTHAND
-  p.display_name = MS2000.DISPLAY_NAME
-
-  p.id = id
-  p.fqid = p.shorthand.."_"..id
-  if count > 1 then
-    p.display_name = p.display_name.." #"..id
-  end
-
-  p.midi_device = midi_device
-
-  if ch == nil then ch = 1 end
-  p.ch = ch
+  local hw = Hw.new(
+    {
+      kind         = MS2000.KIND,
+      shorthand    = MS2000.SHORTHAND,
+      display_name = MS2000.DISPLAY_NAME,
+      plays_notes  = true,
+    },
+    MOD_STATE, id, count, midi_device, ch, nb)
+  setmetatable(hw, {__index = MS2000})
 
   -- NB: the device_id in sysex calls is equal to `ch`
   -- but it's interesting to be able to configure something else for when handling midi routing by overriding `ch` "on the wire"
-  p.device_id = ch
+  hw.device_id = ch
 
-  p.debug = false
+  hw.debug = false
 
-  p.inhibit_midi = nil
+  hw.inhibit_midi = nil
 
-  p.current_pgm_id = nil
-  p.current_pgm_name = nil
+  hw.current_pgm_id = nil
+  hw.current_pgm_name = nil
 
-  p.last_dump_rcv_t = nil
+  hw.last_dump_rcv_t = nil
 
-  p.timbre_params = {}
+  hw.timbre_params = {}
 
-  p.child_hw = {}
+  hw.child_hw = {}
   for t=1,2 do
-    local hw = hwutils.cloned(p)
-    hw.fqid = p.fqid..'_t'..t
-    hw.debug = true -- FIXME: tmp
-    p.child_hw[t] = hw
+    local timbre_hw = hwutils.cloned(hw)
+    timbre_hw.fqid = hw.fqid..'_t'..t
+    -- timbre_hw.debug = true -- FIXME: tmp
+    hw.child_hw[t] = timbre_hw
   end
 
-  return p
+  return hw
 end
 
 
