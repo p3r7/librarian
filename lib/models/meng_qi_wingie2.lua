@@ -2,8 +2,8 @@
 
 
 local Wingie2 = {}
-local Hw = include('librarian/lib/hw')
-setmetatable(Wingie2, {__index = Hw})
+local GenericHw = include('librarian/lib/hw')
+setmetatable(Wingie2, {__index = GenericHw})
 
 
 -- -------------------------------------------------------------------------
@@ -120,7 +120,7 @@ Wingie2.PARAMS = {
 function Wingie2.new(MOD_STATE, id, count, midi_device, ch, nb)
   ch = ch or LEFT_RIGHT_CH
 
-  local hw = Hw.new(
+  local hw = GenericHw.new(
     {
       kind         = KIND,
       shorthand    = SHORTHAND,

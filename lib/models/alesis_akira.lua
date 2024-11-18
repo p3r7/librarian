@@ -1,8 +1,8 @@
 -- librarian/model/alesis akira
 
 local AlesisAkira = {}
-local Hw = include('librarian/lib/hw')
-setmetatable(AlesisAkira, {__index = Hw})
+local GenericHw = include('librarian/lib/hw')
+setmetatable(AlesisAkira, {__index = GenericHw})
 
 local KIND = "alesis_akira"
 local SHORTHAND = "akr"
@@ -38,7 +38,7 @@ local DEFAULT_CC_Z = 93
 function AlesisAkira.new(MOD_STATE, id, count, midi_device, ch)
   ch = ch or DEFAULT_CH
 
-  local hw = Hw.new(
+  local hw = GenericHw.new(
     {
       kind         = KIND,
       shorthand    = SHORTHAND,

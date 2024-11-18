@@ -7,8 +7,8 @@
 
 
 local NordDrum2 = {}
-local Hw = include('librarian/lib/hw')
-setmetatable(NordDrum2, {__index = Hw})
+local GenericHw = include('librarian/lib/hw')
+setmetatable(NordDrum2, {__index = GenericHw})
 
 local KIND = "nord_drum_2"
 local SHORTHAND = "nd2"
@@ -59,7 +59,7 @@ local GLOBAL_CH_NOTES = {60, 62, 64, 65, 67, 69}
 function NordDrum2.new(MOD_STATE, id, count, midi_device, ch, nb)
   ch = ch or GLOBAL_CH
 
-  local hw = Hw.new(
+  local hw = GenericHw.new(
     {
       kind         = KIND,
       shorthand    = SHORTHAND,

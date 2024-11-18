@@ -1,8 +1,8 @@
 -- librarian/model/korg ms2000
 
 local MS2000 = {}
-local Hw = include('librarian/lib/hw')
-setmetatable(MS2000, {__index = Hw})
+local GenericHw = include('librarian/lib/hw')
+setmetatable(MS2000, {__index = GenericHw})
 
 MS2000.KIND = "korg_ms2000"
 MS2000.SHORTHAND = "ms2k"
@@ -38,7 +38,7 @@ local DEFAULT_CH = 1
 function MS2000.new(MOD_STATE, id, count, midi_device, ch, nb)
   ch = ch or DEFAULT_CH
 
-  local hw = Hw.new(
+  local hw = GenericHw.new(
     {
       kind         = MS2000.KIND,
       shorthand    = MS2000.SHORTHAND,

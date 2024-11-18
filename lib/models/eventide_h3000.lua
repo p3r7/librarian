@@ -2,8 +2,8 @@
 
 
 local H3000 = {}
-local Hw = include('librarian/lib/hw')
-setmetatable(H3000, {__index = Hw})
+local GenericHw = include('librarian/lib/hw')
+setmetatable(H3000, {__index = GenericHw})
 
 H3000.KIND = "eventide_h3000"
 H3000.SHORTHAND = "h3k"
@@ -55,7 +55,7 @@ local DEFAULT_CH = 1
 function H3000.new(MOD_STATE, id, count, midi_device, ch)
   ch = ch or DEFAULT_CH
 
-  local hw = Hw.new(
+  local hw = GenericHw.new(
     {
       kind         = H3000.KIND,
       shorthand    = H3000.SHORTHAND,
@@ -71,7 +71,7 @@ function H3000.new(MOD_STATE, id, count, midi_device, ch)
   hw.inhibit_midi = false
 
   -- current pgm
-  -- REVIEW: maybe pass pgm_list in the generic `Hw.new` as it knows how to interpret it?
+  -- REVIEW: maybe pass pgm_list in the `GenericHw.new` as it knows how to interpret it?
   hw.pgm_list = {}
   hw.pgm_map = {}
   hw.algo_pgm_map = {}
