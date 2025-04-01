@@ -429,6 +429,7 @@ function H3000:update_state_from_pgm_dump(raw_payload)
   end
 
   self.last_dump_rcv_t = self.MOD_STATE.clock_pgm_change_t
+  self.pgm_dump_on = nil
 
   local pgm = h3000.parse_pgm_dump(raw_payload)
 

@@ -245,6 +245,7 @@ function MS2000:handle_sysex(raw_payload)
       print("<- PGM DUMP (" .. (#raw_payload - 2) .. ")")
       -- midiutil.print_byte_array_midiox(raw_payload)
     end
+    self.pgm_dump_on = nil
     self:update_state_from_pgm_dump(raw_payload)
 
   else
