@@ -4,6 +4,7 @@
 local mod = require 'core/mods'
 local MOD_NAME = mod.this_name or "librarian"
 
+local inspect   = include("librarian/lib/inspect")
 local binutils  = include('librarian/lib/binutils')
 local GenericHw  = include('librarian/lib/hw')
 local hwutils  = include('librarian/lib/hwutils')
@@ -303,6 +304,10 @@ local function midi_event(MOD_STATE, dev, data, script_event_fn)
         end
       end
     end
+  elseif d.type then
+    print("<- "..d.type.." - "..inspect(d))
+  else
+    print("<- UNKNOWN - data="..inspect(data))
   end
 
   if has_done_sysex then
