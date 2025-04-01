@@ -460,13 +460,24 @@ local function pgm_change_clock_fn()
   end
 end
 
+-- NB: this function prevents current `hw` to do its PGM dump if any other hw is doing so (to prevent colliding sysexes)
+-- OPTIM: only prevent if other hw share the same device
+local function any_other_hw_pgm_dump(hw, hw_list)
+  for _, hw2 in ipairs(hw_list) do
+    if hw2.fqid ~= hw.fqid and hw2.pgm_dump_on then
+      return true
+    end
+  end
+  return false
+end
+
 -- check if we need to send a pgm dump
 local function pgm_dump_clock_fn()
   while true do
     clock.sleep(FREQ_PGM_DUMP)
     MOD_STATE.clock_pgm_dump_t = MOD_STATE.clock_pgm_dump_t + FREQ_PGM_DUMP
 
-    for _, hw in ipairs(hw_list) do
+    for _, hw in ipairs(MOD_STATE.hw_list) do
 
       local after_pgm_dump_wait_s = hw.after_pgm_dump_wait_s or AFTER_PGM_DUMP_WAIT_S
 
@@ -483,14 +494,17 @@ local function pgm_dump_clock_fn()
 
       local needs_pgm_dump = (MOD_STATE.clock_pgm_dump_t - hw.needs_pgm_dump_t) > TRIG_PGM_DUMP_S
       local recent_pgm_dump = hw.last_dump_rcv_t ~= nil and (MOD_STATE.clock_pgm_change_t - hw.last_dump_rcv_t) < after_pgm_dump_wait_s
+      local any_concurrent_pgm_dump = any_other_hw_pgm_dump(hw, MOD_STATE.hw_list)
 
       if needs_pgm_dump
-        and not recent_pgm_dump then
+        and not recent_pgm_dump
+        and not any_concurrent_pgm_dump then
         print("-> PGM DUMP - "..hw.fqid)
 
         hw:dump_pgm()
         hw.needs_pgm_dump = false
         hw.needs_pgm_dump_t = nil
+        hw.pgm_dump_on = true
       end
 
       ::NEXT_HW_PGM_DUMP::
