@@ -218,6 +218,13 @@ end
 local function midi_event(MOD_STATE, dev, data, script_event_fn)
   local d = midi.to_msg(data)
 
+  if #data == 1 and data[1] == 0xfe then
+    -- "Active Sense" message. keepalive of sorts.
+    -- Roland & Korg devices love that...
+    -- http://midi.teragonaudio.com/tech/midispec/sense.htm
+    return
+  end
+
   -- TODO: use device port (or device name + device port) in order to support multiple devices w/ same name
   local dev_id = dev.name
 
