@@ -106,7 +106,7 @@ function H3000.new(MOD_STATE, id, count, midi_device, ch)
   hw.clock_params = clock.run(function()
       while true do
         clock.sleep(FREQ_MIDI_SMOOTH_CLK)
-        p:param_congestion_clock(FREQ_MIDI_SMOOTH_CLK)
+        hw:param_congestion_clock(FREQ_MIDI_SMOOTH_CLK)
       end
   end)
 
@@ -116,7 +116,7 @@ function H3000.new(MOD_STATE, id, count, midi_device, ch)
   -- hw.clock_pgm_t = 0
   hw.last_sent_pgm_change = false
   hw.sent_pgm_new = false
-  hw.is_waiting_for_dump_after_pgm_change = false
+  hw.is_waiting_for_dump_after_pgm_change = false -- REVIEW: keep?
   hw.is_waiting_for_dump = false
   -- hw.clock_pgm = clock.run(function()
   --     while true do
@@ -131,7 +131,7 @@ end
 
 function H3000:cleanup()
   clock.cancel(self.clock_params)
-  clock.cancel(self.clock_pgm)
+  -- clock.cancel(self.clock_pgm)
 end
 
 
@@ -248,7 +248,7 @@ function H3000:param_congestion_clock(tick_d)
 end
 
 function H3000:hide_params_for_algo(algo_id)
-  if algo_id == nil then
+  if algo_id == nil or self.algo_p_map[algo_id] == nil then
     return
   end
   for _, param_id in ipairs(self.algo_p_map[algo_id]) do
@@ -257,7 +257,7 @@ function H3000:hide_params_for_algo(algo_id)
 end
 
 function H3000:show_params_for_algo(algo_id)
-  if algo_id == nil then
+  if algo_id == nil or self.algo_p_map[algo_id] == nil then
     return
   end
   for _, param_id in ipairs(self.algo_p_map[algo_id]) do
@@ -277,10 +277,13 @@ function H3000:midi_event(dev, d)
     self:update_state_from_pgm_change(d.val)
   elseif d.type == 'nrpn' then
     print("<- NRPN - #" .. d.nrpn .. " - " .. d.val)
-  else
+  elseif d.type == 'cc' then
     if self.debug then
       print("<- CC - #" .. d.cc .. " - " .. d.val)
     end
+  else
+    print("<- UNKNOWN - " )
+    tab.print(d)
   end
 end
 
@@ -339,6 +342,7 @@ end
 -- on startup, sometimes sends (PGM CHANGE - 0)
 
 function H3000:clear_pgm_state()
+  -- self.current_pgm = nil
   self.current_pgm_name = nil
   if self.current_algo then
     self.prev_algo = self.current_algo
@@ -347,8 +351,10 @@ function H3000:clear_pgm_state()
 end
 
 function H3000:pgm_change_async(pgm_id)
-  self.asked_pgm_t = self.MOD_STATE.clock_pgm_change_t
   self.asked_pgm = pgm_id
+  self.asked_pgm_t = self.MOD_STATE.clock_pgm_change_t
+
+  -- REVIEW: do it now or at effective PGM change send?
   self:clear_pgm_state()
 end
 
@@ -362,9 +368,14 @@ function H3000:pgm_change(pgm_id, request_pgm_dump)
 
   h3000.pgm_change(self.midi_device, self.ch, self.device_id, pgm_id, request_pgm_dump)
 
+  self.asked_pgm = nil
+  self.asked_pgm_t = nil
+  self.needs_pgm_dump = true
+  self.needs_pgm_dump_t = self.MOD_STATE.clock_pgm_dump_t
+
+  -- self.sent_pgm_t = self.MOD_STATE.clock_pgm_change_t -- REVIEW: keep?
+  -- self.is_waiting_for_dump_after_pgm_change = true
   -- self.sent_pgm_new = true
-  self.sent_pgm_t = self.MOD_STATE.clock_pgm_change_t
-  self.is_waiting_for_dump_after_pgm_change = true
 end
 
 function H3000:update_state_from_bank_change(raw_payload)
@@ -380,8 +391,12 @@ function H3000:update_state_from_pgm_change(bank_pgm)
   if self.current_bank then
     self.current_pgm = self.current_bank * 100 + bank_pgm
     self:clear_pgm_state()
-    self.sent_pgm_t = self.MOD_STATE.clock_pgm_change_t
-    self.is_waiting_for_dump_after_pgm_change = true
+
+    self.needs_pgm_dump = true
+    self.needs_pgm_dump_t = self.MOD_STATE.clock_pgm_dump_t
+
+    -- self.sent_pgm_t = self.MOD_STATE.clock_pgm_change_t -- REVIEW: keep?
+    -- self.is_waiting_for_dump_after_pgm_change = true
   else
     print("   WARN: can't handle as current bank unknown")
   end
@@ -468,7 +483,10 @@ function H3000:update_state_from_pgm_dump(raw_payload)
   end
 
   if self.debug then
-    print("    " .. self.current_pgm .. " " .. self.current_pgm_name .. " (algo=" .. self.current_algo .. ")")
+    local current_pgm = self.current_pgm or "???"
+    local current_pgm_name = self.current_pgm_name or "????????????"
+    local current_algo = self.current_pgm_name or "????"
+    print("    " .. current_pgm .. " " .. current_pgm_name .. " (algo=" .. current_algo .. ")")
   end
 
   self.is_waiting_for_dump = false
