@@ -344,6 +344,9 @@ local function midi_event(MOD_STATE, dev, data, script_event_fn)
     }
   end
 
+  if MOD_STATE.dev_sysex_dump_on[dev_id] then
+    return
+  end
 
   -- --------------------------------
   -- send to each matching hw
