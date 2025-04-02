@@ -364,9 +364,9 @@ local function midi_event(MOD_STATE, dev, data, script_event_fn)
         -- end
 
         local d2 = d
-        if has_done_rpn and hwutils.listens_for_rpn(MOD_STATE.hw, MOD_STATE.hw_rpn_map) then
+        if has_done_rpn and hwutils.listens_for_rpn(hw, MOD_STATE.hw_rpn_map) then
           d2 = rpn
-        elseif has_done_nrpn and hwutils.listens_for_nrpn(MOD_STATE.hw, MOD_STATE.hw_nrpn_map) then
+        elseif has_done_nrpn and hwutils.listens_for_nrpn(hw, MOD_STATE.hw_nrpn_map) then
           d2 = nrpn
         elseif d.cc then
           local cc14_id = hw.cc14_param_map and midiutil.matched_cc14_for_cc(cc, hw.cc14_param_map)
