@@ -151,7 +151,24 @@ end
 --   end
 -- end
 
-local function fmt_multi_shift_pitch(param)
+local function fmt_pct_x10(param)
+  local v = param:get()
+  return string.format("%.1f", v/10) .. "%"
+end
+
+
+local function fmt_pitch(param)
+  -- displayed range: 0.250 -> 2.0
+  -- - -2400 [109 32] -> 1200 [9 48]
+  local v = param:get()
+  if v < 0 then
+    return string.format("%.3f", util.linlin(0, 2400, 1, 0.250, -v)) .. ":1"
+  else
+    return string.format("%.3f", util.linlin(0, 1200, 1, 2, v)) .. ":1"
+  end
+end
+
+local function fmt_pitch_multi_shift(param)
   -- bellow 1.0
   -- 0.125 - 0.944  ->  12784 - 16284
 
@@ -165,11 +182,54 @@ local function fmt_multi_shift_pitch(param)
   end
 end
 
+local function fmt_time_reverb(param)
+  local v = param:get()
+
+  -- 0.1 -> 3.0 in 0.1 steps
+  if v <= 29 then
+    string.format("%.1f", (v+1)/10) .. "s"
+  end
+
+  -- 3.2 -> 5.0 in 0.2 steps
+  if v <= 39 then
+    string.format("%.1f", util.linlin(30, 39, 3.2, 5.0, v)) .. "s"
+  end
+
+  -- 5.5 -> 10.0 in 0.5 steps
+  if v <= 49 then
+    string.format("%.1f", util.linlin(31, 49, 5.5, 10.0, v)) .. "s"
+  end
+
+  -- 15 -> 30 in 5 steps
+  if v <= 49 then
+    string.format("%.1f", util.linlin(50, 53, 15, 30, v)) .. "s"
+  end
+
+  -- 40 -> 100 in 10 steps
+  if v <= 60 then
+    string.format("%.1f", util.linlin(54, 60, 40, 100, v)) .. "s"
+  end
+
+  -- 200 -> 500 in 100 steps
+  if v <= 67 then
+    string.format("%.1f", util.linlin(61, 67, 200, 800, v)) .. "s"
+  end
+
+  if v == 68 then
+    return "big"
+  end
+
+  if v == 69 then
+    return "infinite"
+  end
+end
+
+
 -- ------------------------------------------------------------------------
 -- consts - algos
 
 h3000.ALGOS = {
-  [100] = {
+  [100] = { -- DONE
     name = "DIATONIC SHIFT",
     params = {
       -- basic
@@ -351,8 +411,6 @@ h3000.ALGOS = {
         unit = "cents",
         outfn = handle_neg_x100,
       },
-
-
       {
         id = 23,
         name = "Scale 2 Interval C",
@@ -479,7 +537,7 @@ h3000.ALGOS = {
       },
     }
   },
-  [101] = {
+  [101] = { -- DONE
     name = "LAYERED SHIFT",
     params = {
       -- basic
@@ -487,9 +545,10 @@ h3000.ALGOS = {
       {
         id = 4,
         name = "Left Pitch",
-        min = -1200,
+        min = -2400,
         max = 1200,
         outfn = handle_neg,
+        fmt = fmt_pitch,
       },
       {
         id = 5,
@@ -509,9 +568,10 @@ h3000.ALGOS = {
       {
         id = 6,
         name = "Right Pitch",
-        min = -1200,
+        min = -2400,
         max = 1200,
         outfn = handle_neg,
+        fmt = fmt_pitch,
       },
       {
         id = 7,
@@ -546,6 +606,203 @@ h3000.ALGOS = {
         id = 11,
         name = "Sustain",
         values = {[0] = "On", [16383] = "Off"},
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 8,
+        name = "Low Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 46,
+        fmt = fmt_low_note,
+      },
+      {
+        id = 9,
+        name = "High Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 4,
+        fmt = fmt_high_note,
+      },
+      {
+        id = 10,
+        name = "Source",
+        -- NB: 5 (Polyphonic) -> 95 (Mono)
+        min = 1,
+        max = 19,
+        outfn = function(v)
+          return math.floor(5 * v)
+        end,
+        fmt = fmt_source,
+      },
+    },
+  },
+  [102] = { -- DONE
+    name = "DUAL SHIFT",
+    params = {
+      -- basic
+      -- p1
+      {
+        id = 4,
+        name = "Left Pitch",
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
+        fmt = fmt_pitch,
+      },
+      {
+        id = 5,
+        name = "Left Delay",
+        min = 0,
+        max = 500,
+        unit = "ms",
+      },
+      {
+        id = 2,
+        name = "Left Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 6,
+        name = "Right Pitch",
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
+        fmt = fmt_pitch,
+      },
+      {
+        id = 7,
+        name = "Right Delay",
+        min = 0,
+        max = 500,
+        unit = "ms",
+      },
+      {
+        id = 3,
+        name = "Right Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p3
+      {
+        id = 0,
+        name = "Left Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 1,
+        name = "Right Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 11,
+        name = "Sustain",
+        values = {[0] = "On", [16383] = "Off"},
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 8,
+        name = "Low Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 46,
+        fmt = fmt_low_note,
+      },
+      {
+        id = 9,
+        name = "High Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 4,
+        fmt = fmt_high_note,
+      },
+      {
+        id = 10,
+        name = "Source",
+        -- NB: 5 (Polyphonic) -> 95 (Solo)
+        min = 1,
+        max = 19,
+        outfn = function(v)
+          return math.floor(5 * v)
+        end,
+        fmt = fmt_source,
+      },
+    },
+  },
+  [103] = { -- DONE
+    name = "STEREO SHIFT",
+    params = {
+      -- p1
+      {
+        id = 6,
+        name = "L+R Pitch",
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
+        fmt = fmt_pitch,
+      },
+      {
+        id = 7,
+        name = "L+R Delay",
+        min = 0,
+        max = 1000,
+        unit = "ms",
+      },
+      {
+        id = 1,
+        name = "L+R Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 0,
+        name = "Mix",
+        min = 0,
+        max = 100,
         unit = "%",
       },
       -- levels
@@ -595,41 +852,504 @@ h3000.ALGOS = {
       },
     },
   },
-  [102] = {
-    name = "DUAL SHIFT",
-    params = {},
-  },
-  [103] = {
-    name = "STEREO SHIFT",
-    params = {},
-  },
-  [104] = {
+  [104] = { -- DONE
     name = "REVERSE SHIFT",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 4,
+        name = "Left Pitch",
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
+        fmt = fmt_pitch,
+      },
+      {
+        id = 5,
+        name = "Left Length",
+        min = 1,
+        max = 1400,
+        unit = "ms",
+      },
+      {
+        id = 2,
+        name = "Left Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 5,
+        name = "Right Pitch",
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
+        fmt = fmt_pitch,
+      },
+      {
+        id = 7,
+        name = "Right Length",
+        min = 1,
+        max = 1400,
+        unit = "ms",
+      },
+      {
+        id = 3,
+        name = "Right Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p3
+      {
+        id = 0,
+        name = "Left Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 1,
+        name = "Right Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 11,
+        name = "Sustain",
+        values = {[0] = "On", [16383] = "Off"},
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- no expert params
+    },
   },
-  [105] = {
+  [105] = { -- DONE
     name = "SWEPT COMBS",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 2,
+        name = "Master Delay",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 3,
+        name = "Master Rate",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 8,
+        name = "Master Depth",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 9,
+        name = "Master Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 10,
+        name = "Width",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        fmt = fmt_image,
+      },
+      {
+        id = 7,
+        name = "Loop Repeats",
+        values = {[0] = "On", [16383] = "Off"},
+      },
+      {
+        id = 0,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 4,
+        name = "Glide Rate",
+        min = 0,
+        max = 5000, (39 << 7) + 8
+        -- unit = "%",
+        -- TODO: custom formatter
+      },
+      {
+        id = 5,
+        name = "Delay Gliding",
+        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+      },
+      {
+        id = 6,
+        name = "Input Mode",
+        {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
+      },
+    },
   },
-  [106] = {
+  [106] = { -- DONE
     name = "SWEPT REVERB",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 2,
+        name = "Master Delay",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 3,
+        name = "Master Rate",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 8,
+        name = "Master Depth",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 9,
+        name = "Master Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 0,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 7,
+        name = "Loop Repeats",
+        values = {[0] = "On", [16383] = "Off"},
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 4,
+        name = "Glide Rate",
+        min = 0,
+        max = 5000, (39 << 7) + 8
+        -- unit = "%",
+        -- TODO: custom formatter
+      },
+      {
+        id = 5,
+        name = "Delay Gliding",
+        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+      },
+    },
   },
   [107] = {
     name = "REVERB FACTORY",
     params = {},
   },
-  [108] = {
+  [108] = { -- DONE
     name = "ULTRA-TAP",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 2,
+        name = "Master Delay",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 3,
+        name = "Diffusion",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 4,
+        name = "Width",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        fmt = fmt_image,
+      },
+      {
+        id = 49,
+        name = "Feedback",
+        min = -100,
+        max = 99,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 0,
+        name = "Left Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 1,
+        name = "Right Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 5,
+        name = "Input Mode",
+        {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
+      },
+      {
+        id = 50,
+        name = "Feedback Tap",
+        min = 0,
+        max = 100,
+      },
+    },
   },
-  [109] = {
+  [109] = { -- DONE
     name = "LONG DIGIPLEX",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 2,
+        name = "Loop Delay",
+        min = 0,
+        max = 1400,
+        unit = "ms",
+      },
+      {
+        id = 7,
+        name = "Loop Repeats",
+        values = {[0] = "On", [16383] = "Off"},
+      },
+      {
+        id = 0,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 49,
+        name = "Loop Feedback",
+        min = -100,
+        max = 99,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 4,
+        name = "Glide Rate",
+        min = 0,
+        max = 5000, (39 << 7) + 8
+        -- unit = "%",
+        -- TODO: custom formatter
+      },
+      {
+        id = 5,
+        name = "Delay Gliding",
+        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+      },
+    },
   },
-  [110] = {
+  [110] = { -- DONE
     name = "DUAL DIGIPLEX",
-    params = {},
+    params = {
+      -- both on p1 & p2
+      {
+        id = 7,
+        name = "Loop Repeats",
+        values = {[0] = "On", [16383] = "Off"},
+      },
+      -- p1
+      {
+        id = 2,
+        name = "Left Delay",
+        min = 0,
+        max = 700,
+        unit = "ms",
+      },
+      {
+        id = 0,
+        name = "Left Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 3,
+        name = "Left Feedback",
+        min = -100,
+        max = 99,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 8,
+        name = "Right Delay",
+        min = 0,
+        max = 700,
+        unit = "ms",
+      },
+      {
+        id = 1,
+        name = "Right Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 9,
+        name = "Right Feedback",
+        min = -100,
+        max = 99,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 4,
+        name = "Glide Rate",
+        min = 0,
+        max = 5000, (39 << 7) + 8
+        -- unit = "%",
+        -- TODO: custom formatter
+      },
+      {
+        id = 5,
+        name = "Delay Gliding",
+        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+      },
+      {
+        id = 6,
+        name = "Input Mode",
+        {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
+      },
+    },
   },
   [111] = {
     name = "PATCH FACTORY",
@@ -692,14 +1412,217 @@ h3000.ALGOS = {
 
     },
   },
+
   -- NB: 113, 120 & 121 might be the broadcast-specific time stretch thing & the sampler
-  [114] = {
+
+  [114] = { -- DONE
     name = "DENSE ROOM",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 0,
+        name = "Pre Delay",
+        min = 0,
+        max = 500,
+        unit = "ms",
+      },
+      {
+        id = 1,
+        name = "Reverb Time",
+        min = 0,
+        max = 69,
+        fmt = fmt_time_reverb,
+      },
+      {
+        id = 2,
+        name = "High Cut",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 3,
+        name = "Room Size",
+        min = 0,
+        max = 1000,
+        fmt = fmt_pct_1000,
+      },
+      -- p2
+      {
+        id = 4,
+        name = "Position",
+        min = 0,  -- front
+        max = 23, -- back
+        -- NB: visual mid point is at 12
+        -- TODO: custom formatter, akin to width
+      },
+      {
+        id = 5,
+        name = "Pan",
+        min = 0,  -- left
+        max = 20, -- right
+        -- TODO: custom formatter, akin to width
+      },
+      {
+        id = 6,
+        name = "Early Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 7,
+        name = "Diffusion",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p3
+      {
+        id = 8,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 13,
+        name = "Delay 1",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 14,
+        name = "Delay 2",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 15,
+        name = "Delay 3",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 16,
+        name = "Delay 4",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+    },
   },
-  [115] = {
+  [115] = { -- DONE
     name = "VOCODER",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 0,
+        name = "Format Speed",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 1,
+        name = "Env Speed",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 2,
+        name = "Formant Shift",
+        min = 0,
+        max = 1000,
+        fmt = fmt_pct_x10,
+      },
+      {
+        id = 3,
+        name = "Depth",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- p2
+      {
+        id = 4,
+        name = "Stereo Width",
+        min = 0,
+        max = 100,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.1f", v/10) .. "ms"
+        end,
+      },
+      {
+        id = 5,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- levels
+      {
+        id = 36,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      {
+        id = 10,
+        name = "Max Resonance",
+        min = 0,
+        max = 1000,
+        fmt = fmt_pct_x10,
+      },
+      {
+        id = 11,
+        name = "Min Error",
+        min = 0,
+        max = 1000,
+        fmt = fmt_pct_x10,
+      },
+      {
+        id = 12,
+        name = "Gate Threshold",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+    },
   },
   [116] = {
     name = "MULTI-SHIFT",
@@ -712,7 +1635,7 @@ h3000.ALGOS = {
         min = -3600,
         max = 3600,
         outfn = handle_neg,
-        fmt = fmt_multi_shift_pitch,
+        fmt = fmt_pitch_multi_shift,
       },
       {
         id = 1,
@@ -734,7 +1657,7 @@ h3000.ALGOS = {
         min = -3600,
         max = 3600,
         outfn = handle_neg,
-        fmt = fmt_multi_shift_pitch,
+        fmt = fmt_pitch_multi_shift,
       },
       {
         id = 4,
@@ -763,9 +1686,7 @@ h3000.ALGOS = {
         min = -1000,
         max = 1000,
         outfn = handle_neg,
-        fmt = function(param)
-          return string.format("%.1f", param:get() / 10) .. "%"
-        end
+        fmt = fmt_pct_x10,
       },
       {
         id = 8,
@@ -787,7 +1708,38 @@ h3000.ALGOS = {
   },
   [119] = {
     name = "PHASER",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 0,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 1,
+        name = "Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 2,
+        name = "Sweep Rate",
+        min = 0,
+        max = 5000,
+        -- TODO: custom formatter
+        -- not linear again...
+      },
+      {
+        id = 5,
+        name = "phaser mode",
+        values = {[0] = "Sweep", [1] = "Env", [2] = "ADSR",},
+      },
+      -- p2
+      -- TODO
+    },
   },
   [122] = {
     name = "mod factory|one",
