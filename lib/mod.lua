@@ -267,10 +267,11 @@ local function midi_event(MOD_STATE, dev, data, script_event_fn)
     local should_parse_nrpn = hwutils.should_parse_nrpn(dev, d.ch, MOD_STATE.hw_map, MOD_STATE.hw_nrpn_map)
 
     if (should_parse_rpn or should_parse_nrpn) then
+      MOD_STATE.dev_rpn_mode[dev.name] = MOD_STATE.dev_rpn_mode[dev.name] or {}
       MOD_STATE.dev_rpn_p_msb[dev.name] = MOD_STATE.dev_rpn_p_msb[dev.name] or {}
-      MOD_STATE.dev_rpn_p_msb[dev.name][d.ch] = MOD_STATE.dev_rpn_p_msb[dev.name][d.ch] or {}
       MOD_STATE.dev_rpn_p_lsb[dev.name] = MOD_STATE.dev_rpn_p_lsb[dev.name] or {}
-      MOD_STATE.dev_rpn_p_lsb[dev.name][d.ch] = MOD_STATE.dev_rpn_p_lsb[dev.name][d.ch] or {}
+      MOD_STATE.dev_rpn_v_msb[dev.name] = MOD_STATE.dev_rpn_v_msb[dev.name] or {}
+      MOD_STATE.dev_rpn_v_lsb[dev.name] = MOD_STATE.dev_rpn_v_lsb[dev.name] or {}
     end
 
     if should_parse_rpn and tab.contains({101, 100}, d.cc) then
