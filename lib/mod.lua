@@ -405,7 +405,9 @@ local function midi_event(MOD_STATE, dev, data, script_event_fn)
           end
         end
 
-        hw:midi_event(dev, d2)
+        if d2 then
+          hw:midi_event(dev, d2)
+        end
 
         if d.type == 'program_change' then
           hw.needs_pgm_dump = true
