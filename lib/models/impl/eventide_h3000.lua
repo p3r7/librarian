@@ -187,32 +187,32 @@ local function fmt_time_reverb(param)
 
   -- 0.1 -> 3.0 in 0.1 steps
   if v <= 29 then
-    string.format("%.1f", (v+1)/10) .. "s"
+    return string.format("%.1f", (v+1)/10) .. "s"
   end
 
   -- 3.2 -> 5.0 in 0.2 steps
   if v <= 39 then
-    string.format("%.1f", util.linlin(30, 39, 3.2, 5.0, v)) .. "s"
+    return string.format("%.1f", util.linlin(30, 39, 3.2, 5.0, v)) .. "s"
   end
 
   -- 5.5 -> 10.0 in 0.5 steps
   if v <= 49 then
-    string.format("%.1f", util.linlin(31, 49, 5.5, 10.0, v)) .. "s"
+    return string.format("%.1f", util.linlin(31, 49, 5.5, 10.0, v)) .. "s"
   end
 
   -- 15 -> 30 in 5 steps
   if v <= 49 then
-    string.format("%.1f", util.linlin(50, 53, 15, 30, v)) .. "s"
+    return string.format("%.1f", util.linlin(50, 53, 15, 30, v)) .. "s"
   end
 
   -- 40 -> 100 in 10 steps
   if v <= 60 then
-    string.format("%.1f", util.linlin(54, 60, 40, 100, v)) .. "s"
+    return string.format("%.1f", util.linlin(54, 60, 40, 100, v)) .. "s"
   end
 
   -- 200 -> 500 in 100 steps
   if v <= 67 then
-    string.format("%.1f", util.linlin(61, 67, 200, 800, v)) .. "s"
+    return string.format("%.1f", util.linlin(61, 67, 200, 800, v)) .. "s"
   end
 
   if v == 68 then
