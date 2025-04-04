@@ -1933,10 +1933,18 @@ h3000.ALGOS = {
       },
     },
   },
-  [116] = {
+  [116] = { -- DONE
     name = "MULTI-SHIFT",
     params = {
       -- basic
+      -- p1 + p2
+      {
+        id = 6,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
       -- p1
       {
         id = 0,
@@ -1960,6 +1968,7 @@ h3000.ALGOS = {
         max = 700,
         unit = "ms",
       },
+      -- p2
       {
         id = 3,
         name = "Right Pitch",
@@ -1982,13 +1991,7 @@ h3000.ALGOS = {
         max = 700,
         unit = "ms",
       },
-      {
-        id = 6,
-        name = "Mix",
-        min = 0,
-        max = 100,
-        unit = "%",
-      },
+      -- p3
       {
         id = 7,
         name = "Global Feedback",
@@ -2004,6 +2007,244 @@ h3000.ALGOS = {
         max = 99,
         outfn = handle_neg,
         fmt = fmt_image,
+      },
+      -- levels
+      {
+        id = 9,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 10,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 11,
+        name = "Left Out",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 12,
+        name = "Right Out",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      --   outputs p1
+      {
+        id = 13,
+        name = "L Pitch Level",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      {
+        id = 14,
+        name = "R Pitch Level",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      {
+        id = 15,
+        name = "L Delay Level",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      {
+        id = 16,
+        name = "R Delay Level",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      --   outputs p2
+      {
+        id = 17,
+        name = "L Pitch Pan",
+        min = 0,  -- left
+        max = 20, -- right
+        -- TODO: custom formatter, akin to width
+      },
+      {
+        id = 18,
+        name = "R Pitch Pan",
+        min = 0,  -- left
+        max = 20, -- right
+        -- TODO: custom formatter, akin to width
+      },
+      {
+        id = 19,
+        name = "L Delay Pan",
+        min = 0,  -- left
+        max = 20, -- right
+        -- TODO: custom formatter, akin to width
+      },
+      {
+        id = 20,
+        name = "R Delay Pan",
+        min = 0,  -- left
+        max = 20, -- right
+        -- TODO: custom formatter, akin to width
+      },
+      --   patching p1
+      {
+        id = 21,
+        name = "L Feedback 1",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      {
+        id = 22,
+        name = "L Feedback 2",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      {
+        id = 23,
+        name = "L Feedback 1 Source",
+        values = {
+          [0] = "Left Pitch",
+          [1] = "Left Delay",
+          [2] = "Right Pitch",
+          [3] = "Right Delay"
+        },
+      },
+      {
+        id = 24,
+        name = "L Feedback 2 Source",
+        values = {
+          [0] = "Left Pitch",
+          [1] = "Left Delay",
+          [2] = "Right Pitch",
+          [3] = "Right Delay"
+        },
+      },
+      --   patching p2
+      {
+        id = 25,
+        name = "R Feedback 1",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      {
+        id = 26,
+        name = "R Feedback 2",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+        unit = "%",
+      },
+      {
+        id = 27,
+        name = "R Feedback 1 Source",
+        values = {
+          [0] = "Left Pitch",
+          [1] = "Left Delay",
+          [2] = "Right Pitch",
+          [3] = "Right Delay"
+        },
+      },
+      {
+        id = 28,
+        name = "R Feedback 2 Source",
+        values = {
+          [0] = "Left Pitch",
+          [1] = "Left Delay",
+          [2] = "Right Pitch",
+          [3] = "Right Delay"
+        },
+      },
+      --   l control
+      {
+        id = 29,
+        name = "L Dir",
+        values = {
+          [0] = "forward",
+          [1] = "reverse"
+        },
+      },
+      {
+        id = 30,
+        name = "L XFade",
+        values = {
+          [0] = "slow",
+          [1] = "fast"
+        },
+      },
+      {
+        id = 31,
+        name = "L Deglitch",
+        values = {
+          [0] = "fixed",
+          [1] = "smart"
+        },
+      },
+      {
+        id = 32,
+        name = "L Max Splice",
+        min = 1,
+        max = 675,
+        unit = "ms",
+        -- NB: starting at 44ms, deglitch turns itself off
+        -- maybe show it w/ a custom formatter?
+      },
+      --   r control
+      {
+        id = 33,
+        name = "R Dir",
+        values = {
+          [0] = "forward",
+          [1] = "reverse"
+        },
+      },
+      {
+        id = 34,
+        name = "R XFade",
+        values = {
+          [0] = "slow",
+          [1] = "fast"
+        },
+      },
+      {
+        id = 35,
+        name = "R Deglitch",
+        values = {
+          [0] = "fixed",
+          [1] = "smart"
+        },
+      },
+      {
+        id = 36,
+        name = "R Max Splice",
+        min = 1,
+        max = 675,
+        unit = "ms",
+        -- NB: starting at 44ms, deglitch turns itself off
+        -- maybe show it w/ a custom formatter?
       },
     },
   },
