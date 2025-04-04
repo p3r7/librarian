@@ -574,6 +574,24 @@ h3000.ALGOS = {
         end,
         fmt = fmt_source,
       },
+    },
+    stereo_params = {
+      {
+        k = "voice mode",
+        p = {5, 6}
+      },
+      {
+        k = "fdbk",
+        p = {2, 3}
+      },
+      {
+        k = "in",
+        p = {36, 37}
+      },
+      {
+        k = "mix",
+        p = {0, 1}
+      },
     }
   },
   [101] = { -- DONE
@@ -692,6 +710,28 @@ h3000.ALGOS = {
         fmt = fmt_source,
       },
     },
+    stereo_params = {
+      {
+        k = "pitch",
+        p = {4, 6}
+      },
+      {
+        k = "delay",
+        p = {5, 7}
+      },
+      {
+        k = "feedback",
+        p = {2, 3}
+      },
+      {
+        k = "mix",
+        p = {0, 1}
+      },
+      {
+        k = "level in",
+        p = {36, 37}
+      },
+    }
   },
   [102] = { -- DONE
     name = "DUAL SHIFT",
@@ -808,6 +848,28 @@ h3000.ALGOS = {
         fmt = fmt_source,
       },
     },
+    stereo_params = {
+      {
+        k = "pitch",
+        p = {4, 6}
+      },
+      {
+        k = "delay",
+        p = {5, 7}
+      },
+      {
+        k = "feedback",
+        p = {2, 3}
+      },
+      {
+        k = "mix",
+        p = {0, 1}
+      },
+      {
+        k = "level in",
+        p = {36, 37}
+      },
+    }
   },
   [103] = { -- DONE
     name = "STEREO SHIFT",
@@ -889,6 +951,12 @@ h3000.ALGOS = {
         fmt = fmt_source,
       },
     },
+    stereo_params = {
+      {
+        k = "level in",
+        p = {36, 37}
+      },
+    }
   },
   [104] = { -- DONE
     name = "REVERSE SHIFT",
@@ -903,7 +971,7 @@ h3000.ALGOS = {
         fmt = fmt_pitch,
       },
       {
-        id = 5,
+        id = 6,
         name = "Left Length",
         min = 1,
         max = 1400,
@@ -978,6 +1046,28 @@ h3000.ALGOS = {
       },
       -- no expert params
     },
+    stereo_params = {
+      {
+        k = "pitch",
+        p = {4, 5}
+      },
+      {
+        k = "length",
+        p = {6, 7}
+      },
+      {
+        k = "feedback",
+        p = {2, 3}
+      },
+      {
+        k = "mix",
+        p = {0, 1}
+      },
+      {
+        k = "level in",
+        p = {36, 37}
+      },
+    }
   },
   [105] = { -- DONE
     name = "SWEPT COMBS",
@@ -1069,6 +1159,12 @@ h3000.ALGOS = {
         {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
       },
     },
+    stereo_params = {
+      {
+        k = "level in",
+        p = {47, 48}
+      },
+    }
   },
   [106] = { -- DONE
     name = "SWEPT REVERB",
@@ -1147,6 +1243,12 @@ h3000.ALGOS = {
         {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
       },
     },
+    stereo_params = {
+      {
+        k = "level in",
+        p = {47, 48}
+      },
+    }
   },
   [107] = {
     name = "REVERB FACTORY",
@@ -1231,6 +1333,16 @@ h3000.ALGOS = {
         max = 100,
       },
     },
+    stereo_params = {
+      {
+        k = "mix",
+        p = {0, 1}
+      },
+      {
+        k = "level in",
+        p = {51, 52}
+      },
+    }
   },
   [109] = { -- DONE
     name = "LONG DIGIPLEX",
@@ -1295,6 +1407,12 @@ h3000.ALGOS = {
         {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
       },
     },
+    stereo_params = {
+      {
+        k = "level in",
+        p = {47, 48}
+      },
+    }
   },
   [110] = { -- DONE
     name = "DUAL DIGIPLEX",
@@ -1388,6 +1506,24 @@ h3000.ALGOS = {
         {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
       },
     },
+    stereo_params = {
+      {
+        k = "delay",
+        p = {2, 8}
+      },
+      {
+        k = "mix",
+        p = {0, 1}
+      },
+      {
+        k = "feedback",
+        p = {3, 9}
+      },
+      {
+        k = "level in",
+        p = {47, 48}
+      },
+    }
   },
   [111] = {
     name = "PATCH FACTORY",
@@ -1720,6 +1856,28 @@ h3000.ALGOS = {
         max = 95, -- solo
       },
     },
+    stereo_params = {
+      {
+        k = "mix",
+        p = {7, 8}
+      },
+      {
+        k = "level in",
+        p = {9, 10}
+      },
+      {
+        k = "sweep pitch",
+        p = {25, 27}
+      },
+      {
+        k = "sweep delay",
+        p = {26, 28}
+      },
+      {
+        k = "sweep feedback",
+        p = {29, 30}
+      },
+    }
   },
 
   -- NB: 113, 120 & 121 might be the broadcast-specific time stretch thing & the sampler
@@ -1841,6 +1999,12 @@ h3000.ALGOS = {
         unit = "samples",
       },
     },
+    stereo_params = {
+      {
+        k = "level in",
+        p = {36, 37}
+      },
+    }
   },
   [115] = { -- DONE
     name = "VOCODER",
@@ -1932,6 +2096,12 @@ h3000.ALGOS = {
         unit = "%",
       },
     },
+    stereo_params = {
+      {
+        k = "level in",
+        p = {36, 37}
+      },
+    }
   },
   [116] = { -- DONE
     name = "MULTI-SHIFT",
@@ -2247,6 +2417,76 @@ h3000.ALGOS = {
         -- maybe show it w/ a custom formatter?
       },
     },
+    stereo_params = {
+      {
+        k = "pitch",
+        p = {0, 3}
+      },
+      {
+        k = "pitch delay",
+        p = {1, 4}
+      },
+      {
+        k = "delay",
+        p = {2, 5}
+      },
+      {
+        k = "level in",
+        p = {9, 10}
+      },
+      {
+        k = "level out",
+        p = {11, 12}
+      },
+      {
+        k = "pitch level",
+        p = {13, 14}
+      },
+      {
+        k = "delay level",
+        p = {15, 16}
+      },
+      {
+        k = "pitch pan",
+        p = {17, 18}
+      },
+      {
+        k = "delay pan",
+        p = {19, 20}
+      },
+      {
+        k = "feedback 1",
+        p = {21, 25}
+      },
+      {
+        k = "feedback 2",
+        p = {22, 26}
+      },
+      {
+        k = "feedback 1 source",
+        p = {23, 27}
+      },
+      {
+        k = "feedback 2 source",
+        p = {24, 28}
+      },
+      {
+        k = "direction",
+        p = {29, 33}
+      },
+      {
+        k = "xfade",
+        p = {30, 34}
+      },
+      {
+        k = "deglitch",
+        p = {31, 35}
+      },
+      {
+        k = "max splice",
+        p = {32, 36}
+      },
+    }
   },
   [117] = {
     name = "BAND DELAY",
