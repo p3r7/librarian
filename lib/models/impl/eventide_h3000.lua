@@ -1632,7 +1632,7 @@ h3000.ALGOS = {
         name = "Up 1 Max",
         min = -1200,
         max = 1200,
-        unit = "cents"
+        unit = "cents",
         outfn = handle_neg,
       },
       {
@@ -1646,7 +1646,7 @@ h3000.ALGOS = {
         name = "Down 1 Min",
         min = -1200,
         max = 1200,
-        unit = "cents"
+        unit = "cents",
         outfn = handle_neg,
       },
       --   sweeps p4
@@ -1661,7 +1661,7 @@ h3000.ALGOS = {
         name = "Up 2 Max",
         min = -1200,
         max = 1200,
-        unit = "cents"
+        unit = "cents",
         outfn = handle_neg,
       },
       {
@@ -1675,7 +1675,7 @@ h3000.ALGOS = {
         name = "Down 2 Min",
         min = -1200,
         max = 1200,
-        unit = "cents"
+        unit = "cents",
         outfn = handle_neg,
       },
       --   sweeps p5
@@ -1684,7 +1684,7 @@ h3000.ALGOS = {
         name = "Rand 1 Max",
         min = -1200,
         max = 1200,
-        unit = "cents"
+        unit = "cents",
         outfn = handle_neg,
       },
       {
@@ -1692,7 +1692,7 @@ h3000.ALGOS = {
         name = "Rand 2 Max",
         min = -1200,
         max = 1200,
-        unit = "cents"
+        unit = "cents",
         outfn = handle_neg,
       },
       --   deglitch p1
@@ -2080,7 +2080,7 @@ h3000.ALGOS = {
         name = "Filter Freq",
         min = 0,
         max = 5000,
-        fmt = = function(param)
+        fmt = function(param)
           local v = param:get()
           return string.format("%.2f", v/50)
         end,
@@ -2393,7 +2393,7 @@ h3000.ALGOS = {
         name = "Attack",
         min = 0,
         max = 5000,
-        fmt = = function(param)
+        fmt = function(param)
           local v = param:get()
           return string.format("%.2f", v/50)
         end,
@@ -2403,7 +2403,7 @@ h3000.ALGOS = {
         name = "Decay",
         min = 0,
         max = 5000,
-        fmt = = function(param)
+        fmt = function(param)
           local v = param:get()
           return string.format("%.2f", v/50)
         end,
@@ -2413,7 +2413,7 @@ h3000.ALGOS = {
         name = "Sustain",
         min = 0,
         max = 5000,
-        fmt = = function(param)
+        fmt = function(param)
           local v = param:get()
           return string.format("%.2f", v/50)
         end,
@@ -2423,7 +2423,7 @@ h3000.ALGOS = {
         name = "Release",
         min = 0,
         max = 5000,
-        fmt = = function(param)
+        fmt = function(param)
           local v = param:get()
           return string.format("%.2f", v/50)
         end,
