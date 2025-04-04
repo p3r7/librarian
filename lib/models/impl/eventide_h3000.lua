@@ -70,13 +70,13 @@ local KEYS = {
   [11] = "B",
 }
 
-function make_notes_table()
+function make_notes_table(nb_notes, start_octave)
   local out = {}
 
   local k = 2
-  local octave = 1
+  local octave = start_octave
 
-  for i=0,46 do
+  for i=0,nb_notes do
     table.insert(out, KEYS[k] .. octave)
     k = k + 1
     if k > #KEYS-1 then
@@ -88,7 +88,46 @@ function make_notes_table()
   return out
 end
 
-local NOTES = make_notes_table()
+local NOTES = make_notes_table(46, 1)
+local NOTES_MIDI = make_notes_table(127, 0)
+
+local STUTTER_TRIG_MODES = {
+  [0] = "No Action",
+  [1] = "Stut 1 L",
+  [2] = "Stut 1 R",
+  [3] = "Stut 1 L+R",
+  [4] = "Stut 2 L",
+  [5] = "Stut 2 R",
+  [6] = "Stut 2 L+R",
+  [7] = "Rands L",
+  [8] = "Rands R",
+  [9] = "Rands L+R",
+  [10] = "Swpu1 L",
+  [11] = "Swpu1 R",
+  [12] = "Swpu1 L+R",
+  [13] = "Swpu2 L",
+  [14] = "Swpu2 R",
+  [15] = "Swpu2 L+R",
+  [16] = "Swpd1 L",
+  [17] = "Swpd1 R",
+  [18] = "Swpd1 L+R",
+  [19] = "Swpd2 L",
+  [20] = "Swpd2 R",
+  [21] = "Swpd2 L+R",
+  [22] = "Sw Lu/Rd",
+  [23] = "Sw Ld/Ru",
+  [24] = "Rpit1 L",
+  [25] = "Rpit1 R",
+  [26] = "Rpit1 L+R",
+  [27] = "Rpit2 L",
+  [28] = "Rpit2 R",
+  [29] = "Rpit2 L+R",
+  [30] = "Zero1 L",
+  [31] = "Zero1 R",
+  [32] = "Zero1 L+R",
+  [33] = "Zero2 L",
+  [34] = "Zero2 R",
+}
 
 local function handle_neg(v)
   if v < 0 then
@@ -251,7 +290,7 @@ h3000.ALGOS = {
         values = {
           [0] = "on",
           [16383] = "off",
-        }
+        },
       },
       {
         id = 4,
@@ -745,7 +784,6 @@ h3000.ALGOS = {
       {
         id = 8,
         name = "Low Note",
-        -- TODO: custom formatter
         min = 0,
         max = 46,
         fmt = fmt_low_note,
@@ -996,7 +1034,7 @@ h3000.ALGOS = {
       },
       -- levels
       {
-        id = 36,
+        id = 47,
         name = "Left In",
         min = -48,
         max = 48,
@@ -1004,7 +1042,7 @@ h3000.ALGOS = {
         outfn = handle_neg,
       },
       {
-        id = 37,
+        id = 48,
         name = "Right In",
         min = -48,
         max = 48,
@@ -1079,7 +1117,7 @@ h3000.ALGOS = {
       },
       -- levels
       {
-        id = 36,
+        id = 47,
         name = "Left In",
         min = -48,
         max = 48,
@@ -1087,7 +1125,7 @@ h3000.ALGOS = {
         outfn = handle_neg,
       },
       {
-        id = 37,
+        id = 48,
         name = "Right In",
         min = -48,
         max = 48,
@@ -1165,7 +1203,7 @@ h3000.ALGOS = {
       },
       -- levels
       {
-        id = 36,
+        id = 51,
         name = "Left In",
         min = -48,
         max = 48,
@@ -1173,7 +1211,7 @@ h3000.ALGOS = {
         outfn = handle_neg,
       },
       {
-        id = 37,
+        id = 52,
         name = "Right In",
         min = -48,
         max = 48,
@@ -1227,7 +1265,7 @@ h3000.ALGOS = {
       },
       -- levels
       {
-        id = 36,
+        id = 47,
         name = "Left In",
         min = -48,
         max = 48,
@@ -1235,7 +1273,7 @@ h3000.ALGOS = {
         outfn = handle_neg,
       },
       {
-        id = 37,
+        id = 48,
         name = "Right In",
         min = -48,
         max = 48,
@@ -1315,7 +1353,7 @@ h3000.ALGOS = {
       },
       -- levels
       {
-        id = 36,
+        id = 47,
         name = "Left In",
         min = -48,
         max = 48,
@@ -1323,7 +1361,7 @@ h3000.ALGOS = {
         outfn = handle_neg,
       },
       {
-        id = 37,
+        id = 48,
         name = "Right In",
         min = -48,
         max = 48,
@@ -1355,9 +1393,10 @@ h3000.ALGOS = {
     name = "PATCH FACTORY",
     params = {},
   },
-  [112] = {
+  [112] = { -- DONE
     name = "STUTTER",
     params = {
+      -- p1
       {
         id = 0,
         name = "Trigger",
@@ -1382,6 +1421,7 @@ h3000.ALGOS = {
         is_trig = true,
         v = 7594,
       },
+      -- p2
       {
         id = 4,
         name = "Auto",
@@ -1406,10 +1446,279 @@ h3000.ALGOS = {
           [3] = "Just Stutter",
         },
       },
-      -- left / right mix
+      -- p2
+      {
+        id = 7,
+        name = "Left Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 8,
+        name = "Right Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
       -- levels
+      {
+        id = 9,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 10,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
       -- expert
-
+      --   triggers p1
+      {
+        id = 13,
+        name = "Trig Length 1",
+        min = 0,
+        max = 500,
+        unit = "ms",
+      },
+      {
+        id = 15,
+        name = "Trig Count 1",
+        min = 0,
+        max = 16,
+      },
+      {
+        id = 14,
+        name = "Trig Length 2",
+        min = 0,
+        max = 500,
+        unit = "ms",
+      },
+      {
+        id = 16,
+        name = "Trig Count 2",
+        min = 0,
+        max = 16,
+      },
+      --   triggers p1
+      {
+        id = 17,
+        name = "Trig 1a",
+        values = STUTTER_TRIG_MODES,
+      },
+      {
+        id = 18,
+        name = "Trig 1b",
+        values = STUTTER_TRIG_MODES,
+      },
+      -- TODO: need to map it to a momentary param, send on then off just after as a trigger message
+      -- {
+      --   id = 0,
+      --   name = "Trigger 1",
+      --   values = {[0] = "On", [7594] = "Off"},
+      -- },
+      --   triggers p2
+      {
+        id = 19,
+        name = "Trig 2a",
+        values = STUTTER_TRIG_MODES,
+      },
+      {
+        id = 20,
+        name = "Trig 2b",
+        values = STUTTER_TRIG_MODES,
+      },
+      -- TODO: need to map it to a momentary param, send on then off just after as a trigger message
+      -- {
+      --   id = 1,
+      --   name = "Trigger 2",
+      --   values = {[0] = "On", [7594] = "Off"},
+      -- },
+      --   triggers p3
+      {
+        id = 21,
+        name = "Trig 3a",
+        values = STUTTER_TRIG_MODES,
+      },
+      {
+        id = 22,
+        name = "Trig 3b",
+        values = STUTTER_TRIG_MODES,
+      },
+      -- TODO: need to map it to a momentary param, send on then off just after as a trigger message
+      -- {
+      --   id = 2,
+      --   name = "Trigger 3",
+      --   values = {[0] = "On", [7594] = "Off"},
+      -- },
+      --   triggers p4
+      {
+        id = 23,
+        name = "Trig 4a",
+        values = STUTTER_TRIG_MODES,
+      },
+      {
+        id = 24,
+        name = "Trig 4b",
+        values = STUTTER_TRIG_MODES,
+      },
+      -- TODO: need to map it to a momentary param, send on then off just after as a trigger message
+      -- {
+      --   id = 3,
+      --   name = "Trigger 4",
+      --   values = {[0] = "On", [7594] = "Off"},
+      -- },
+      --   sweeps p1
+      {
+        id = 25,
+        name = "Left Pitch",
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
+        fmt = fmt_pitch,
+      },
+      {
+        id = 26,
+        name = "Left Delay",
+        min = 0,
+        max = 1000,
+        unit = "ms",
+      },
+      {
+        id = 29,
+        name = "L Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      --   sweeps p2
+      {
+        id = 27,
+        name = "Left Pitch",
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
+        fmt = fmt_pitch,
+      },
+      {
+        id = 28,
+        name = "Left Delay",
+        min = 0,
+        max = 1000,
+        unit = "ms",
+      },
+      {
+        id = 30,
+        name = "L Feedback",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      --   sweeps p3
+      {
+        id = 31,
+        name = "Up 1 Rate",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 32,
+        name = "Up 1 Max",
+        min = -1200,
+        max = 1200,
+        unit = "cents"
+        outfn = handle_neg,
+      },
+      {
+        id = 33,
+        name = "Down 2 Rate",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 34,
+        name = "Down 1 Min",
+        min = -1200,
+        max = 1200,
+        unit = "cents"
+        outfn = handle_neg,
+      },
+      --   sweeps p4
+      {
+        id = 35,
+        name = "Up 2 Rate",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 36,
+        name = "Up 2 Max",
+        min = -1200,
+        max = 1200,
+        unit = "cents"
+        outfn = handle_neg,
+      },
+      {
+        id = 37,
+        name = "Down 2 Rate",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 38,
+        name = "Down 2 Min",
+        min = -1200,
+        max = 1200,
+        unit = "cents"
+        outfn = handle_neg,
+      },
+      --   sweeps p5
+      {
+        id = 39,
+        name = "Rand 1 Max",
+        min = -1200,
+        max = 1200,
+        unit = "cents"
+        outfn = handle_neg,
+      },
+      {
+        id = 40,
+        name = "Rand 2 Max",
+        min = -1200,
+        max = 1200,
+        unit = "cents"
+        outfn = handle_neg,
+      },
+      --   deglitch p1
+      {
+        id = 41,
+        name = "Low Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 46,
+        fmt = fmt_low_note,
+      },
+      {
+        id = 42,
+        name = "High Note",
+        -- TODO: custom formatter
+        min = 0,
+        max = 4,
+        fmt = fmt_high_note,
+      },
+      {
+        id = 43,
+        name = "Source",
+        -- TODO: custom formatter
+        min = 5,  -- polyphonic
+        max = 95, -- solo
+      },
     },
   },
 
@@ -1702,11 +2011,297 @@ h3000.ALGOS = {
     name = "BAND DELAY",
     params = {},
   },
-  [118] = {
+  [118] = { -- DONE
     name = "STRING MODELLER",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 0,
+        name = "Pitch",
+        min = 0,
+        max = 2500,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/25)
+        end,
+      },
+      {
+        id = 1,
+        name = "Decay",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 2,
+        name = "Release",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 3,
+        name = "Sustain",
+        values = {[0] = "off", [1] = "on (hold)"},
+      },
+      -- p2
+      {
+        id = 4,
+        name = "Gate Time",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 5,
+        name = "Gate Mode",
+        values = {
+          [0] = "normal",
+          [1] = "keyed",
+          [2] = "open",
+        },
+      },
+      {
+        id = 6,
+        name = "Hold",
+        values = {[0] = "off", [1] = "on"},
+      },
+      {
+        id = 7,
+        name = "Pitch Offset",
+        min = -2500,
+        max = 2500,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/25)
+        end,
+        outfn = handle_neg,
+      },
+      -- p3
+      {
+        id = 8,
+        name = "Filter Freq",
+        min = 0,
+        max = 5000,
+        fmt = = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
+      },
+      {
+        id = 9,
+        name = "Filter Q",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 10,
+        name = "Bright (Bite / Attack)",
+        min = 0,
+        max = 100,
+      },
+      -- p4
+      {
+        id = 11,
+        name = "High Noise Amount",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 12,
+        name = "Band Noise Amount",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 13,
+        name = "Low Noise Amount",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 14,
+        name = "Ext Input Amount",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      -- p5
+      {
+        id = 15,
+        name = "Chorus Amount",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 16,
+        name = "Chorus Speed",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 17,
+        name = "Chorus Depth",
+        min = 0,
+        max = 100,
+      },
+      -- levels
+      {
+        id = 41,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 42,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      --   p1
+      {
+        id = 24,
+        name = "Decay Velocity",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 25,
+        name = "Gate Velocity",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 26,
+        name = "Level Velocity",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 27,
+        name = "Bright Velocity",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      --   p2
+      {
+        id = 20,
+        name = "Decay Key",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 21,
+        name = "Gate Key",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 22,
+        name = "Level Key",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      {
+        id = 23,
+        name = "Bright Key",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      --   p3
+      {
+        id = 28,
+        name = "Release Key",
+        min = -100,
+        max = 100,
+        outfn = handle_neg,
+      },
+      --   notes
+      {
+        id = 29,
+        name = "Voice 1 Note",
+        values = NOTES_MIDI,
+      },
+      {
+        id = 30,
+        name = "Voice 2 Note",
+        values = NOTES_MIDI,
+      },
+      {
+        id = 31,
+        name = "Voice 3 Note",
+        values = NOTES_MIDI,
+      },
+      {
+        id = 32,
+        name = "Voice 4 Note",
+        values = NOTES_MIDI,
+      },
+      {
+        id = 33,
+        name = "Voice 5 Note",
+        values = NOTES_MIDI,
+      },
+      {
+        id = 34,
+        name = "Voice 6 Note",
+        values = NOTES_MIDI,
+      },
+      --   starts
+      {
+        id = 35,
+        name = "Voice 1 Start",
+        min = 0,
+        max = 127,
+      },
+      {
+        id = 36,
+        name = "Voice 2 Start",
+        min = 0,
+        max = 127,
+      },
+      {
+        id = 37,
+        name = "Voice 3 Start",
+        min = 0,
+        max = 127,
+      },
+      {
+        id = 38,
+        name = "Voice 4 Start",
+        min = 0,
+        max = 127,
+      },
+      {
+        id = 39,
+        name = "Voice 5 Start",
+        min = 0,
+        max = 127,
+      },
+      {
+        id = 40,
+        name = "Voice 6 Start",
+        min = 0,
+        max = 127,
+      },
+
+    },
   },
-  [119] = {
+  [119] = { -- DONE
     name = "PHASER",
     params = {
       -- p1
@@ -1734,11 +2329,142 @@ h3000.ALGOS = {
       },
       {
         id = 5,
-        name = "phaser mode",
+        name = "Phaser Mode",
         values = {[0] = "Sweep", [1] = "Env", [2] = "ADSR",},
       },
       -- p2
-      -- TODO
+      {
+        id = 7,
+        name = "Sweep Top Freq",
+        min = 0,
+        max = 1000,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.1f", v/10)
+        end,
+      },
+      {
+        id = 6,
+        name = "Sweep Bottom Freq",
+        min = 0,
+        max = 1000,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.1f", v/10)
+        end,
+      },
+      -- levels
+      {
+        id = 17,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 18,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 19,
+        name = "Left Out",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 20,
+        name = "Right Out",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      --   p1
+      {
+        id = 8,
+        name = "Attack",
+        min = 0,
+        max = 5000,
+        fmt = = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
+      },
+      {
+        id = 9,
+        name = "Decay",
+        min = 0,
+        max = 5000,
+        fmt = = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
+      },
+      {
+        id = 10,
+        name = "Sustain",
+        min = 0,
+        max = 5000,
+        fmt = = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
+      },
+      {
+        id = 11,
+        name = "Release",
+        min = 0,
+        max = 5000,
+        fmt = = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
+      },
+      --   p2
+      {
+        id = 12,
+        name = "Attack Threshold",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 13,
+        name = "Release Threshold",
+        min = 0,
+        max = 100,
+      },
+      --   p2
+      {
+        id = 3,
+        name = "Env Decay Rate",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 16,
+        name = "Env Type",
+        values = {[0] = "Linear", [1] = "Exponential"},
+      },
+      {
+        id = 15,
+        name = "Env Track Channel",
+        -- REVIEW: maybe use an `infn` and `outfn` to add/remove 1
+        -- kinda bad to use transmitted value 0 while it's 1 indexed in both Lua and the device display...
+        min = 0,
+        max = 1,
+        fmt = function(param)
+          local v = param:get()
+          return v + 1
+        end,
+      },
     },
   },
   [122] = {
