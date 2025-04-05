@@ -718,11 +718,6 @@ h3000.ALGOS = {
         end,
         fmt = fmt_source,
       },
-      {
-        id = 11,
-        name = "Deglitch Mode",
-        values = {[0] = "Lock to Channel 1", [16383] = "Channel 1+2"},
-      },
     },
     stereo_params = {
       {
@@ -960,6 +955,11 @@ h3000.ALGOS = {
           return math.floor(5 * v)
         end,
         fmt = fmt_source,
+      },
+      {
+        id = 11,
+        name = "Deglitch Mode",
+        values = {[0] = "Lock to Channel 1", [16383] = "Channel 1+2"},
       },
     },
     stereo_params = {
