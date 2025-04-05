@@ -582,7 +582,8 @@ mod.hook.register("script_post_cleanup", MOD_NAME.."-script-post-cleanup",
                         hw:cleanup()
                       end
                     end
-                    tempty(hw_list)
+                    tempty(MOD_STATE.hw_list)
+                    tempty(MOD_STATE.hw_map)
                   end
 )
 
