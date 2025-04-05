@@ -6,6 +6,7 @@ local h3000 = {}
 -- ------------------------------------------------------------------------
 -- deps
 
+local MusicUtil = require "musicutil"
 local midiutil = include("librarian/lib/midiutil")
 include("librarian/lib/core") -- for `tab_sliced`
 
@@ -38,13 +39,13 @@ local DIATONIC_SHIFT_VOICE_MODES = {
   [5] = "-third",
   [6] = "-second",
   [7] = "unison",
-  [8] = "-second",
-  [9] = "-third",
-  [10] = "-fourth",
-  [11] = "-fifth",
-  [12] = "-sixth",
-  [13] = "-seventh",
-  [14] = "-octave",
+  [8]  = "+second",
+  [9]  = "+third",
+  [10] = "+fourth",
+  [11] = "+fifth",
+  [12] = "+sixth",
+  [13] = "+seventh",
+  [14] = "+octave",
 
   [15] = "lo ton ped",
   [16] = "lo dom ped",
@@ -152,7 +153,18 @@ local function fmt_low_note(param)
   -- TODO: this one is super tricky as depends on the high note one
   -- can get current id w/ `param.id`
 
-  return param:get()
+  local p_id = param.id
+  local hn_p_id = p_id:gsub("_(%d+)$",
+                            function(n)
+                              return "_" .. tostring(tonumber(n) + 1)
+  end)
+
+  local hn_v = params:get(hn_p_id)
+  local ln_v = param:get()
+
+  local hn = 72 + (hn_v * 12) -- NB: 72 means C4
+  local ln = hn - 12 - 46 + ln_v
+  return MusicUtil.note_num_to_name(ln, true)
 end
 
 local function fmt_high_note(param)
@@ -196,6 +208,7 @@ local function fmt_pct_x10(param)
 end
 
 
+-- FIXME: buggued
 local function fmt_pitch(param)
   -- displayed range: 0.250 -> 2.0
   -- - -2400 [109 32] -> 1200 [9 48]
@@ -357,200 +370,199 @@ h3000.ALGOS = {
       {
         id = 11,
         name = "Scale 1 Interval C",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 12,
         name = "Scale 1 Interval C#",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 13,
         name = "Scale 1 Interval D",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 14,
         name = "Scale 1 Interval Eb",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 15,
         name = "Scale 1 Interval E",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 16,
         name = "Scale 1 Interval F",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 17,
         name = "Scale 1 Interval F#",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 18,
         name = "Scale 1 Interval G",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 19,
         name = "Scale 1 Interval Ab",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 20,
         name = "Scale 1 Interval A",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 21,
         name = "Scale 1 Interval Bb",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 22,
         name = "Scale 1 Interval B",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 23,
         name = "Scale 2 Interval C",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 24,
         name = "Scale 2 Interval C#",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 25,
         name = "Scale 2 Interval D",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 26,
         name = "Scale 2 Interval Eb",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 27,
         name = "Scale 2 Interval E",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 28,
         name = "Scale 2 Interval F",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 29,
         name = "Scale 2 Interval F#",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 30,
         name = "Scale 2 Interval G",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 31,
         name = "Scale 2 Interval Ab",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 32,
         name = "Scale 2 Interval A",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 33,
         name = "Scale 2 Interval Bb",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
       {
         id = 34,
         name = "Scale 2 Interval B",
-        min = -24,
-        max = 12,
+        min = -2400,
+        max = 1200,
+        outfn = handle_neg,
         unit = "cents",
-        outfn = handle_neg_x100,
       },
 
       {
         id = 8,
         name = "Low Note",
-        -- TODO: custom formatter
         min = 0,
         max = 46,
         fmt = fmt_low_note,
@@ -558,7 +570,6 @@ h3000.ALGOS = {
       {
         id = 9,
         name = "High Note",
-        -- TODO: custom formatter
         min = 0,
         max = 4,
         fmt = fmt_high_note,
@@ -685,7 +696,6 @@ h3000.ALGOS = {
       {
         id = 8,
         name = "Low Note",
-        -- TODO: custom formatter
         min = 0,
         max = 46,
         fmt = fmt_low_note,
@@ -693,7 +703,6 @@ h3000.ALGOS = {
       {
         id = 9,
         name = "High Note",
-        -- TODO: custom formatter
         min = 0,
         max = 4,
         fmt = fmt_high_note,
@@ -708,6 +717,11 @@ h3000.ALGOS = {
           return math.floor(5 * v)
         end,
         fmt = fmt_source,
+      },
+      {
+        id = 11,
+        name = "Deglitch Mode",
+        values = {[0] = "Lock to Channel 1", [16383] = "Channel 1+2"},
       },
     },
     stereo_params = {
@@ -801,7 +815,7 @@ h3000.ALGOS = {
       {
         id = 11,
         name = "Sustain",
-        values = {[0] = "On", [16383] = "Off"},
+        values = {[0] = "On (looping)", [16383] = "Off"},
       },
       -- levels
       {
@@ -831,7 +845,6 @@ h3000.ALGOS = {
       {
         id = 9,
         name = "High Note",
-        -- TODO: custom formatter
         min = 0,
         max = 4,
         fmt = fmt_high_note,
@@ -926,7 +939,6 @@ h3000.ALGOS = {
       {
         id = 8,
         name = "Low Note",
-        -- TODO: custom formatter
         min = 0,
         max = 46,
         fmt = fmt_low_note,
@@ -934,7 +946,6 @@ h3000.ALGOS = {
       {
         id = 9,
         name = "High Note",
-        -- TODO: custom formatter
         min = 0,
         max = 4,
         fmt = fmt_high_note,
@@ -1151,12 +1162,12 @@ h3000.ALGOS = {
       {
         id = 5,
         name = "Delay Gliding",
-        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+        values = {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
       },
       {
         id = 6,
         name = "Input Mode",
-        {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
+        values = {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
       },
     },
     stereo_params = {
@@ -1192,7 +1203,7 @@ h3000.ALGOS = {
         unit = "%",
       },
       {
-        id = 9,
+        id = 1,
         name = "Master Feedback",
         min = 0,
         max = 100,
@@ -1233,14 +1244,14 @@ h3000.ALGOS = {
         id = 4,
         name = "Glide Rate",
         min = 0,
-        max = 5000, (39 << 7) + 8
+        max = 5000,
         -- unit = "%",
         -- TODO: custom formatter
       },
       {
         id = 5,
         name = "Delay Gliding",
-        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+        values = {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
       },
     },
     stereo_params = {
@@ -1324,13 +1335,13 @@ h3000.ALGOS = {
       {
         id = 5,
         name = "Input Mode",
-        {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
+        values = {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
       },
       {
         id = 50,
         name = "Feedback Tap",
         min = 0,
-        max = 100,
+        max = 12,
       },
     },
     stereo_params = {
@@ -1404,7 +1415,7 @@ h3000.ALGOS = {
       {
         id = 5,
         name = "Delay Gliding",
-        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+        values = {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
       },
     },
     stereo_params = {
@@ -1498,12 +1509,12 @@ h3000.ALGOS = {
       {
         id = 5,
         name = "Delay Gliding",
-        {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
+        values = {[0] = "On", [16383] = "Off"}, -- (127 << 7) + 127
       },
       {
         id = 6,
         name = "Input Mode",
-        {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
+        values = {[0] = "Stereo", [16383] = "Mono"}, -- (127 << 7) + 127
       },
     },
     stereo_params = {
@@ -1835,7 +1846,6 @@ h3000.ALGOS = {
       {
         id = 41,
         name = "Low Note",
-        -- TODO: custom formatter
         min = 0,
         max = 46,
         fmt = fmt_low_note,
@@ -1843,7 +1853,6 @@ h3000.ALGOS = {
       {
         id = 42,
         name = "High Note",
-        -- TODO: custom formatter
         min = 0,
         max = 4,
         fmt = fmt_high_note,
