@@ -1155,9 +1155,11 @@ h3000.ALGOS = {
         id = 4,
         name = "Glide Rate",
         min = 0,
-        max = 5000, (39 << 7) + 8
-        -- unit = "%",
-        -- TODO: custom formatter
+        max = 5000,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
       },
       {
         id = 5,
@@ -1245,8 +1247,10 @@ h3000.ALGOS = {
         name = "Glide Rate",
         min = 0,
         max = 5000,
-        -- unit = "%",
-        -- TODO: custom formatter
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
       },
       {
         id = 5,
@@ -1408,9 +1412,11 @@ h3000.ALGOS = {
         id = 4,
         name = "Glide Rate",
         min = 0,
-        max = 5000, (39 << 7) + 8
-        -- unit = "%",
-        -- TODO: custom formatter
+        max = 5000,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
       },
       {
         id = 5,
@@ -1502,9 +1508,11 @@ h3000.ALGOS = {
         id = 4,
         name = "Glide Rate",
         min = 0,
-        max = 5000, (39 << 7) + 8
-        -- unit = "%",
-        -- TODO: custom formatter
+        max = 5000,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.2f", v/50)
+        end,
       },
       {
         id = 5,
