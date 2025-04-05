@@ -216,7 +216,7 @@ end
 -- -------------------------------------------------------------------------
 -- midi plumbing
 
-local function midi_event(MOD_STATE, dev, data, script_event_fn)
+local function midi_event(MOD_STATE, dev, data)
   local d = midi.to_msg(data)
 
   if #data == 1 and data[1] == 0xfe then
@@ -419,10 +419,6 @@ local function midi_event(MOD_STATE, dev, data, script_event_fn)
 
     ::NEXT_HW_MIDI_RCV::
   end
-
-  if script_event_fn then
-    script_event_fn(data)
-  end
 end
 
 -- check if we need to send a pgm change
@@ -551,7 +547,10 @@ mod.hook.register("script_post_init", MOD_NAME.."-script-post-init",
                       if dev.connected then
                         local script_dev_event = dev.event
                         dev.event = function(data)
-                          midi_event(MOD_STATE, dev, data, script_dev_event)
+                          midi_event(MOD_STATE, dev, data)
+                          if script_dev_event then
+                            script_dev_event(data)
+                          end
                         end
                       end
                     end
