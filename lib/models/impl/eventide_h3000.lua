@@ -274,6 +274,8 @@ local function fmt_time_reverb(param)
   if v == 69 then
     return "infinite"
   end
+
+  return "infinite" .. "+" .. (v-69)
 end
 
 
@@ -1265,9 +1267,206 @@ h3000.ALGOS = {
       },
     }
   },
-  [107] = {
+  [107] = { -- DONE
     name = "REVERB FACTORY",
-    params = {},
+    params = {
+      -- p1
+      {
+        id = 1,
+        name = "Pre-Delay",
+        min = 0,
+        max = 500,
+        unit = "ms",
+      },
+      {
+        id = 2,
+        name = "Open Decay",
+        min = 0,
+        max = 74,
+        fmt = fmt_time_reverb,
+      },
+      {
+        id = 3,
+        name = "Close Decay",
+        min = 0,
+        max = 74,
+        fmt = fmt_time_reverb,
+      },
+      {
+        id = 4,
+        name = "Gate Time",
+        min = 0,
+        max = 250,
+        fmt = function(param)
+          local v = param:get()
+          return string.format("%.1f", v/10) .. "s"
+        end,
+      },
+      -- p2
+      {
+        id = 0,
+        name = "Mix",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      -- level
+      {
+        id = 22,
+        name = "Left In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      {
+        id = 23,
+        name = "Right In",
+        min = -48,
+        max = 48,
+        unit = "dB",
+        outfn = handle_neg,
+      },
+      -- expert
+      --   eq p1
+      {
+        id = 5,
+        name = "on Lo Freq",
+        min = 0,
+        max = 3,
+        fmt = function(param)
+          local v = param:get()
+          return (v + 1) * 50 .. "Hz"
+        end,
+      },
+      {
+        id = 6,
+        name = "on Lo Freq Atten",
+        min = -6,
+        max = 0,
+        outfn = handle_neg,
+        unit = "dB",
+      },
+      {
+        id = 7,
+        name = "on Hi Freq",
+        min = 0,
+        max = 3,
+        fmt = function(param)
+          local v = param:get()
+          local values = {2, 4, 8, 12}
+          return values[v] .. "khz"
+        end,
+      },
+      {
+        id = 8,
+        name = "on hi Freq Atten",
+        min = -6,
+        max = 0,
+        outfn = handle_neg,
+        unit = "dB",
+      },
+      --   eq p2
+      {
+        id = 9,
+        name = "off Lo Freq",
+        min = 0,
+        max = 3,
+        fmt = function(param)
+          local v = param:get()
+          return (v + 1) * 50 .. "Hz"
+        end,
+      },
+      {
+        id = 10,
+        name = "off Lo Freq Atten",
+        min = -6,
+        max = 0,
+        outfn = handle_neg,
+        unit = "dB",
+      },
+      {
+        id = 11,
+        name = "off Hi Freq",
+        min = 0,
+        max = 3,
+        fmt = function(param)
+          local v = param:get()
+          local values = {2, 4, 8, 12}
+          return values[v] .. "khz"
+        end,
+      },
+      {
+        id = 12,
+        name = "off hi Freq Atten",
+        min = -6,
+        max = 0,
+        outfn = handle_neg,
+        unit = "dB",
+      },
+      --   gate
+      {
+        id = 13,
+        name = "Gate Speed",
+        min = 0,
+        max = 100,
+      },
+      {
+        id = 14,
+        name = "Gate Threshold",
+        min = 0,
+        max = 100,
+        unit = "%",
+      },
+      {
+        id = 15,
+        name = "Gate",
+        values = {[0] = "enabled", [16383] = "disabled"},
+      },
+      --   delays
+      {
+        id = 16,
+        name = "Delay 1",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 17,
+        name = "Delay 2",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 18,
+        name = "Delay 3",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 19,
+        name = "Delay 4",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 20,
+        name = "Delay 5",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+      {
+        id = 21,
+        name = "Delay 6",
+        min = 0,
+        max = 5000,
+        unit = "samples",
+      },
+    },
   },
   [108] = { -- DONE
     name = "ULTRA-TAP",
