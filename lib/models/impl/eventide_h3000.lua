@@ -1475,7 +1475,7 @@ h3000.ALGOS = {
       {
         id = 2,
         name = "Master Delay",
-        min = 0,
+        min = 1,
         max = 100,
         unit = "%",
       },
