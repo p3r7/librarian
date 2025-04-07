@@ -3279,9 +3279,7 @@ local function pgm_id_from_pgm_dump(payload)
   return payload[11] + payload[12]
 end
 
-function h3000.parse_pgm_dump(raw_payload)
-  local payload = h3000.parse_sysex_payload_ascii_encoded(raw_payload)
-
+function h3000.parse_pgm_dump(payload)
   -- if payload[11] > 0xC8 then
   --   payload[11] = 0xC8 + (payload[11] - 0xC8) * 100
   -- end

@@ -291,9 +291,10 @@ function H3000:handle_sysex(raw_payload)
   if h3000.is_sysex_bank_select(raw_payload, self.device_id, self.ch) then
     self:update_state_from_bank_change(raw_payload)
   elseif h3000.is_sysex_pgm_dump(raw_payload, self.device_id) then
-    self:update_state_from_pgm_dump(raw_payload)
-
+    -- H3000 seems to sends sysex doubly encoded (as ASCII)
+    -- this is extremely weird, but whatever...
     local payload = h3000.parse_sysex_payload_ascii_encoded(raw_payload)
+    self:update_state_from_pgm_dump(payload, raw_payload)
 
     -- param scanning
     -- local is_new_payload = true
@@ -322,13 +323,14 @@ function H3000:handle_sysex(raw_payload)
     --   end
     -- end
 
-    midiutil.print_byte_array_midiox(payload)
-
-  else
-    if self.debug then
-      print("<- UNKNOWN SYSEX (" .. (#raw_payload - 2) .. ")")
+    if self.debug and self.MOD_STATE.log.pgm_dump then
+      midiutil.print_byte_array_midiox(payload)
     end
-    midiutil.print_byte_array_midiox(raw_payload)
+  else
+    if self.debug and self.MOD_STATE.log.unknown_sysex then
+      print("<- UNKNOWN SYSEX (" .. (#raw_payload - 2) .. ")")
+      midiutil.print_byte_array_midiox(raw_payload)
+    end
   end
 end
 
@@ -438,15 +440,15 @@ function H3000:update_current_pgm_param(pgm_id)
   self.inhibit_midi = false
 end
 
-function H3000:update_state_from_pgm_dump(raw_payload)
+function H3000:update_state_from_pgm_dump(payload, raw_payload)
   if self.debug then
-    print("<- PGM DUMP (" .. (#raw_payload - 2) .. "B)")
+    print("<- PGM DUMP (" .. (#payload - 2) .. ", raw " .. (#raw_payload - 2) .. "B)")
   end
 
   self.last_dump_rcv_t = self.MOD_STATE.clock_pgm_change_t
   self.pgm_dump_on = nil
 
-  local pgm = h3000.parse_pgm_dump(raw_payload)
+  local pgm = h3000.parse_pgm_dump(payload)
 
   -- NB: past a certain pgm_id, we can't just get it from the pgm_dump payload
   -- (or at least i haven't found where part of the pgm_id is encoded...)
@@ -479,7 +481,7 @@ function H3000:update_state_from_pgm_dump(raw_payload)
   end
 
   if self.pgm_dump_rcv then
-    self.pgm_dump_rcv(pgm)
+    self.pgm_dump_rcv(pgm, payload)
   end
 
   if self.debug then

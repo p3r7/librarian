@@ -42,6 +42,11 @@ local MOD_STATE = {
   dev_rpn_p_lsb = {},
   dev_rpn_v_msb = {},
   dev_rpn_v_lsb = {},
+
+  log = {
+    pgm_dump = false,
+    unknown_sysex = false,
+  }
 }
 
 -- NB: `pgm_dump_clock` re-fetches current pgm params, not necessarilly through a midi pgm_dump, it can use other APIs if available
