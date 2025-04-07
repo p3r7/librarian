@@ -1355,7 +1355,7 @@ h3000.ALGOS = {
         fmt = function(param)
           local v = param:get()
           local values = {2, 4, 8, 12}
-          return values[v] .. "khz"
+          return values[v+1] .. "khz"
         end,
       },
       {
@@ -1393,7 +1393,7 @@ h3000.ALGOS = {
         fmt = function(param)
           local v = param:get()
           local values = {2, 4, 8, 12}
-          return values[v] .. "khz"
+          return values[v+1] .. "khz"
         end,
       },
       {
