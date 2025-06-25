@@ -12,8 +12,8 @@ but in a lot of scenarios, the *simple* format is good enough.
 
 you should us the *class-based* format when havin to deal with:
 - `sysex`
-- a device exposing multiple voices other different channels (bastl microGranny, nord drum, waldorf Q...)
-- multi-algorythm (different params depending on current PGM algorythm)
+- a device exposing multiple voices over different channels (bastl microGranny, nord drum, waldorf Q...)
+- multi-algorithm (different params depending on current PGM algorythm)
 
 
 #### *simple* format
